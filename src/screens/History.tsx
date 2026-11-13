@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { Sim } from "../../modules/call-filter"
 import { Config, LogItem, REASONS, sameNumber } from "../config"
-import { c, f } from "../theme"
-import { Button, Card, Empty, Eyebrow, Sub, Title } from "../ui"
+import { c } from "../theme"
+import { Button, Card, Empty, Sub, Title } from "../ui"
 import { confirm } from "./Lists"
+import Stats from "./Stats"
 
 type Props = { cfg: Config; sims: Sim[]; log: LogItem[]; update: (fn: (x: Config) => Config) => void; onClear: () => void }
 
@@ -23,23 +24,8 @@ export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props
     return s ? s.name : ""
   }
 
-  // resumen por motivo
-  const counts = Object.entries(log.filter((l) => !l.allowed).reduce<Record<string, number>>((a, l) => ((a[l.reason] = (a[l.reason] ?? 0) + 1), a), {})).sort((a, b) => b[1] - a[1])
-
   return (
     <View>
-      <Card>
-        <Eyebrow>POR MOTIVO</Eyebrow>
-        <View style={{ marginTop: 10 }}>
-          {counts.map(([r, n]) => (
-            <View key={r} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 }}>
-              <Text style={{ color: c.sub, fontSize: 14, fontFamily: f.regular }}>{REASONS[r] ?? r}</Text>
-              <Text style={{ color: c.text, fontSize: 14, fontFamily: f.medium }}>{n}</Text>
-            </View>
-          ))}
-        </View>
-      </Card>
-
       <Card style={{ paddingVertical: 6 }}>
         {log.map((l, i) => {
           const isSpam = cfg.spam.some((e) => sameNumber(e.number, l.number))
@@ -63,6 +49,7 @@ export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props
         })}
       </Card>
       <Button kind="glass" label="Borrar historial" onPress={() => confirm("Borrar historial", "Se borra la lista de llamadas bloqueadas (no el spam).", "Borrar", onClear)} />
+      <Stats log={log} />
     </View>
   )
 }
