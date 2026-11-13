@@ -24,7 +24,7 @@ export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props
   }
 
   // resumen por motivo
-  const counts = Object.entries(log.reduce<Record<string, number>>((a, l) => ((a[l.reason] = (a[l.reason] ?? 0) + 1), a), {})).sort((a, b) => b[1] - a[1])
+  const counts = Object.entries(log.filter((l) => !l.allowed).reduce<Record<string, number>>((a, l) => ((a[l.reason] = (a[l.reason] ?? 0) + 1), a), {})).sort((a, b) => b[1] - a[1])
 
   return (
     <View>

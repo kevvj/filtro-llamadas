@@ -30,6 +30,9 @@ class FilterScreeningService : CallScreeningService() {
       FilterEngine.addLog(this, number ?: "", simId, decision.reason)
     } else if (decision.reason == "repeat") {
       FilterEngine.addLog(this, number ?: "", simId, decision.reason, allowed = true)
+    } else if (decision.reason == "ok" && !number.isNullOrBlank() && !FilterEngine.isContact(this, number)) {
+      // desconocido que entró: queda en el historial para poder marcarlo como spam
+      FilterEngine.addLog(this, number, simId, "entered", allowed = true)
     }
     respondToCall(details, response.build())
   }

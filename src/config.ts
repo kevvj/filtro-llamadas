@@ -36,6 +36,7 @@ export const REASONS: Record<string, string> = {
   private: "Número oculto",
   quiet: "No molestar",
   repeat: "Entró por insistencia",
+  entered: "Desconocido, entró",
   ok: "Se permitiría",
   allowlist: "En lista de permitidos",
   "filtro apagado": "El filtro está apagado",
