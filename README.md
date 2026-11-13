@@ -154,8 +154,15 @@ Nada llega a la APK sin pasar estas revisiones (`.github/workflows/ci.yml`), en 
 | **Dependency review** | En pull requests, dependencias nuevas con fallos graves. |
 | **npm ci** | Un `package-lock.json` que no coincida con `package.json`. |
 
-### Publicar una versión
-No cada push genera una APK: solo cuando cambia la versión de `app.json`.
+### Publicar cambios
+Hay dos caminos, y el CI elige solo:
+
+| Cambio | Cómo llega al celular |
+|---|---|
+| **Solo JS** (pantallas, textos, botones, lógica en `src/`) | Push normal. El CI publica una actualización OTA en GitHub Pages y la app la baja al abrirse (`expo-updates`). Sin APK. |
+| **Nativo** (dependencias, `app.json`, `app.config.js`, `modules/*/android`) | Hay que subir la versión: el CI compila APK nueva. Si cambias algo nativo sin subirla, el CI falla y lo avisa. |
+
+Las OTA solo llegan a las APK de la misma versión (`runtimeVersion` = versión).
 
 ```bash
 npm run nueva-version              # 1.1.0 → 1.1.1 (o: minor, major, 1.4.0)

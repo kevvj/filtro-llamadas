@@ -74,7 +74,14 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if gh release view "v$VERSION" > /dev/null 2>&1; then
             echo "nueva=false" >> "$GITHUB_OUTPUT"
-            echo "La versión $VERSION ya está publicada: no se compila APK."
+            echo "La versión $VERSION ya está publicada: no se compila APK, el cambio va por OTA."
+            # un cambio nativo no llega por OTA: hay que subir la versión
+            PUBLICADA=$(gh release download "v$VERSION" -p native-hash.txt -O - 2>/dev/null || echo "sin-huella")
+            ACTUAL=$(node scripts/native-hash.js)
+            if [ "$PUBLICADA" != "$ACTUAL" ]; then
+              echo "::error::Cambió la parte nativa (dependencias, app.json, app.config.js o modules/*/android) y eso no llega por OTA. Corre: npm run nueva-version"
+              exit 1
+            fi
           else
             echo "nueva=true" >> "$GITHUB_OUTPUT"
             echo "Versión nueva: $VERSION"
@@ -126,7 +133,36 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           NOTES="Versión $VERSION (commit ${GITHUB_SHA::7}). Requiere Android 10 o superior. La app se actualiza sola."
-          gh release create "v$VERSION" filtro-llamadas.apk version.json --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest
+          node scripts/native-hash.js > native-hash.txt
+          gh release create "v$VERSION" filtro-llamadas.apk version.json native-hash.txt --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest
           for tag in $(gh release list --limit 100 --json tagName -q '.[].tagName'); do
             [ "$tag" = "v$VERSION" ] || gh release delete "$tag" --yes --cleanup-tag
           done
+
+  # Cambios solo de JS (pantallas, textos, botones): sin APK. Se publican en GitHub Pages y la app
+  # los baja al abrirse (expo-updates). Solo llegan a las APK de la misma versión.
+  ota:
+    name: Publicar actualización OTA
+    needs: version
+    if: needs.version.outputs.nueva == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Exportar JS
+        run: npx expo export -p android --output-dir dist
+      - name: Armar manifest
+        run: node scripts/ota.js site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
