@@ -80,7 +80,7 @@ jobs:
         run: npx expo prebuild -p android --no-install
       - name: Compilar APK
         working-directory: android
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 --no-daemon
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a --no-daemon
       - name: Renombrar
         run: cp android/app/build/outputs/apk/release/app-release.apk filtro-llamadas.apk
       - name: Datos de la versión para el actualizador
