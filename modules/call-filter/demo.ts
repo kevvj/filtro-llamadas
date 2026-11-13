@@ -39,6 +39,11 @@ export const demoModule = {
   hasScreeningRole: () => true,
   simToolkits: () => [{ pkg: "com.android.stk", sim: 1, enabled: true }, { pkg: "com.android.stk2", sim: 2, enabled: false }],
   openPackageSettings: () => {},
+  recentCalls: () => [
+    { number: "+57 601 555 1234", name: "", date: Date.now() - 6e5, type: 3 },
+    { number: "+57 300 111 2233", name: "Ana", date: Date.now() - 36e5, type: 1 },
+    { number: "+1 202 555 0188", name: "", date: Date.now() - 9e7, type: 1 },
+  ],
   requestScreeningRole: () => true,
   openAppSettings: () => {},
   addTile: () => false,

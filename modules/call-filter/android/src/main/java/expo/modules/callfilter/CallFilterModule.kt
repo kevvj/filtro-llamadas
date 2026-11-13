@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.CallLog
 import android.provider.Settings
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
@@ -108,6 +109,29 @@ class CallFilterModule : Module() {
       val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg))
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       context.startActivity(intent)
+    }
+
+    // Últimas llamadas del registro del teléfono, un número por fila (necesita READ_CALL_LOG).
+    Function("recentCalls") { limit: Int ->
+      val out = mutableListOf<Map<String, Any?>>()
+      val seen = HashSet<String>()
+      try {
+        context.contentResolver.query(
+          CallLog.Calls.CONTENT_URI,
+          arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.DATE, CallLog.Calls.TYPE),
+          null, null, CallLog.Calls.DATE + " DESC"
+        )?.use { c ->
+          while (c.moveToNext() && out.size < limit) {
+            val number = c.getString(0) ?: continue
+            val key = number.filter { it.isDigit() }.takeLast(10)
+            if (key.length < 3 || !seen.add(key)) continue
+            out.add(mapOf("number" to number, "name" to (c.getString(1) ?: ""), "date" to c.getLong(2).toDouble(), "type" to c.getInt(3)))
+          }
+        }
+      } catch (e: SecurityException) {
+      } catch (e: Exception) {
+      }
+      out
     }
 
     Function("getConfig") { FilterEngine.getConfig(context) }

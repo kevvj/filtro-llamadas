@@ -9,7 +9,7 @@ import Stats from "./Stats"
 
 type Props = { cfg: Config; sims: Sim[]; log: LogItem[]; update: (fn: (x: Config) => Config) => void; onClear: () => void }
 
-const when = (t: number) => {
+export const when = (t: number) => {
   const d = new Date(t)
   const today = new Date().toDateString() === d.toDateString()
   const h = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })

@@ -3,6 +3,7 @@
   <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
   <uses-permission android:name="android.permission.READ_CONTACTS" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
   <!-- para ver si el SIM Toolkit (publicidad de la SIM) está activo -->
   <queries>
@@ -41,5 +42,14 @@
         <action android:name="android.service.quicksettings.action.QS_TILE" />
       </intent-filter>
     </service>
+
+    <!-- "¿Era spam?": fin de llamada y botón de la notificación -->
+    <receiver android:name="expo.modules.callfilter.CallEndReceiver" android:exported="true"
+      android:permission="android.permission.READ_PHONE_STATE">
+      <intent-filter>
+        <action android:name="android.intent.action.PHONE_STATE" />
+      </intent-filter>
+    </receiver>
+    <receiver android:name="expo.modules.callfilter.MarkSpamReceiver" android:exported="false" />
   </application>
 </manifest>

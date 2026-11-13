@@ -16,6 +16,7 @@ export type Entry = { number: string; note?: string; added: number }
 export type Config = {
   enabled: boolean
   blockPrivate: boolean
+  askSpam: boolean // notificación "¿Era spam?" al colgar con un desconocido
   quiet: { enabled: boolean; from: number; to: number } // minutos desde 00:00
   repeat: { enabled: boolean; calls: number; minutes: number } // insistencia
   spam: Entry[]
@@ -60,6 +61,7 @@ export function defaultConfig(deviceIso: string): Config {
   return {
     enabled: true,
     blockPrivate: false,
+    askSpam: true,
     quiet: { enabled: false, from: 22 * 60, to: 7 * 60 },
     repeat: { enabled: true, calls: 2, minutes: 3 },
     spam: [],

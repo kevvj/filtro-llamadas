@@ -26,8 +26,11 @@ const files = walk("modules")
   .filter((f) => f.includes("/android/") || f.endsWith("expo-module.config.json"))
   .sort()
 // los parches de node_modules (patch-package) también cambian código nativo
+// el ícono de la app va dentro de la APK
+const icons = walk("assets").map((f) => f.split(path.sep).join("/")).sort()
 const patches = walk("patches").map((f) => f.split(path.sep).join("/")).sort()
 for (const f of [...files, ...patches]) parts.push([f, fs.readFileSync(f, "utf8")])
+for (const f of icons) parts.push([f, fs.readFileSync(f).toString("base64")])
 
 const h = crypto.createHash("sha256")
 // sin \r para que dé igual en Windows y en Linux

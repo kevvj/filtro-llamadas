@@ -1,8 +1,10 @@
-import { useState } from "react"
-import { Alert, Platform, StyleSheet, Text, View } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { Alert, PermissionsAndroid, Platform, StyleSheet, Text, View } from "react-native"
+import CallFilter, { RecentCall } from "../../modules/call-filter"
 import { Config, Entry, digits, sameNumber } from "../config"
 import { c, f } from "../theme"
-import { Button, Card, Chip, Empty, Input, Segmented, Sub, Title } from "../ui"
+import { Button, Card, Chip, Empty, Eyebrow, Input, Segmented, Sub, Title } from "../ui"
+import { when } from "./History"
 
 type Props = { cfg: Config; update: (fn: (x: Config) => Config) => void }
 type Kind = "spam" | "allow" | "prefix"
@@ -22,19 +24,22 @@ export default function ListsScreen({ cfg, update }: Props) {
   const [note, setNote] = useState("")
   const [showNote, setShowNote] = useState(false)
 
+  const put = (k: "spam" | "allow", n: string, noteText?: string) =>
+    update((x) => {
+      // un número no puede estar en spam y en permitidos a la vez
+      const other = k === "spam" ? "allow" : "spam"
+      if (x[k].some((e) => sameNumber(e.number, n))) return x
+      const entry: Entry = { number: n, note: noteText || undefined, added: Date.now() }
+      return { ...x, [k]: [entry, ...x[k]], [other]: x[other].filter((e) => !sameNumber(e.number, n)) }
+    })
+
   const add = () => {
     const n = num.trim()
     if (digits(n).length < (kind === "prefix" ? 1 : 3)) return
     if (kind === "prefix") {
       update((x) => (x.prefixes.includes(n) ? x : { ...x, prefixes: [...x.prefixes, n] }))
     } else {
-      const entry: Entry = { number: n, note: note.trim() || undefined, added: Date.now() }
-      update((x) => {
-        // un número no puede estar en spam y en permitidos a la vez
-        const other = kind === "spam" ? "allow" : "spam"
-        if (x[kind].some((e) => sameNumber(e.number, n))) return x
-        return { ...x, [kind]: [entry, ...x[kind]], [other]: x[other].filter((e) => !sameNumber(e.number, n)) }
-      })
+      put(kind, n, note.trim())
     }
     setNum("")
     setNote("")
@@ -110,6 +115,62 @@ export default function ListsScreen({ cfg, update }: Props) {
       ) : (
         <Empty text={kind === "spam" ? "Ningún número marcado como spam" : "Sin números permitidos"} />
       )}
+
+      {kind !== "prefix" && <Recent kind={kind} cfg={cfg} onPick={(r) => put(kind, r.number, r.name)} />}
     </View>
+  )
+}
+
+const TYPES: Record<number, string> = { 1: "Entró", 2: "Saliente", 3: "Perdida", 5: "Rechazada", 6: "Bloqueada" }
+
+// Últimas llamadas del teléfono, para marcar un número con un toque sin escribirlo.
+function Recent(p: { kind: "spam" | "allow"; cfg: Config; onPick: (r: RecentCall) => void }) {
+  const [granted, setGranted] = useState<boolean | null>(Platform.OS === "web" ? true : null)
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return
+    PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_CALL_LOG).then(setGranted)
+  }, [])
+  // se vuelve a leer cuando cambia la config (al marcar uno, o al volver a la app)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const calls = useMemo(() => (granted ? CallFilter?.recentCalls(20) ?? [] : []), [granted, p.cfg])
+
+  const ask = async () => {
+    const r = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CALL_LOG)
+    if (r === "granted") setGranted(true)
+    else if (r === "never_ask_again") CallFilter?.openAppSettings()
+  }
+
+  if (granted === null || !CallFilter) return null
+  if (!granted)
+    return (
+      <Card>
+        <Eyebrow>Llamadas recientes</Eyebrow>
+        <Sub style={{ marginTop: 8, marginBottom: 14 }}>Marca un número de tus últimas llamadas sin tener que escribirlo.</Sub>
+        <Button kind="glass" label="Ver llamadas recientes" onPress={ask} />
+      </Card>
+    )
+
+  const list = p.kind === "spam" ? p.cfg.spam : p.cfg.allow
+  const rows = calls.filter((r) => r.type !== 2 && !list.some((e) => sameNumber(e.number, r.number))).slice(0, 10)
+  if (!rows.length) return null
+  return (
+    <Card style={{ paddingVertical: 6 }}>
+      <Eyebrow style={{ marginTop: 12 }}>Llamadas recientes</Eyebrow>
+      {rows.map((r, i) => (
+        <View key={r.number} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderTopColor: c.line }}>
+          <View style={{ flex: 1 }}>
+            <Title>{r.name || r.number}</Title>
+            <Sub>{[r.name ? r.number : "", TYPES[r.type] ?? "", when(r.date)].filter(Boolean).join(" · ")}</Sub>
+          </View>
+          <Text
+            onPress={() => p.onPick(r)}
+            style={{ color: p.kind === "spam" ? c.danger : c.text, backgroundColor: p.kind === "spam" ? c.dangerSoft : c.glass, fontSize: 13, fontFamily: f.medium, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, overflow: "hidden" }}
+          >
+            {p.kind === "spam" ? "Spam" : "Permitir"}
+          </Text>
+        </View>
+      ))}
+    </Card>
   )
 }

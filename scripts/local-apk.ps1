@@ -39,14 +39,12 @@ $gradle = "android\app\build.gradle"
 if (-not (Select-String -Path $gradle -Pattern "buildStagingDirectory" -Quiet)) {
   Add-Content $gradle "`nandroid.externalNativeBuild.cmake.buildStagingDirectory = file('C:/flc')"
 }
-# local: sin R8 ni lint (lentos y piden mucha memoria) y con más memoria para Gradle; el CI sí los usa
+# local: más memoria para Gradle (R8 la necesita); sin lint, que es lento
 $props = "android\gradle.properties"
 $extra = @(
-  "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g",
-  "android.enableMinifyInReleaseBuilds=false",
-  "android.enableShrinkResourcesInReleaseBuilds=false"
+  "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g"
 )
-$lines = Get-Content $props | Where-Object { $_ -notmatch "^(org\.gradle\.jvmargs|android\.enableMinifyInReleaseBuilds|android\.enableShrinkResourcesInReleaseBuilds)=" }
+$lines = Get-Content $props | Where-Object { $_ -notmatch "^org\.gradle\.jvmargs=" }
 Set-Content $props ($lines + $extra)
 Push-Location android
 .\gradlew.bat assembleRelease "-PreactNativeArchitectures=arm64-v8a" -x lintVitalRelease -x lintVitalAnalyzeRelease

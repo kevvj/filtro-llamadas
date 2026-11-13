@@ -40,6 +40,7 @@ class FilterScreeningService : CallScreeningService() {
     } else if (decision.reason == "ok" && !number.isNullOrBlank() && !FilterEngine.isContact(this, number)) {
       // desconocido que entró: queda en el historial para poder marcarlo como spam
       FilterEngine.addLog(this, number, simId, "entered", allowed = true)
+      SpamPrompt.remember(this, number)
     }
     respondToCall(details, response.build())
   }

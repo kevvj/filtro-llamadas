@@ -11,6 +11,9 @@ export type Sim = {
   number: string
 }
 
+// type: 1 entrante, 2 saliente, 3 perdida, 5 rechazada, 6 bloqueada
+export type RecentCall = { number: string; name: string; date: number; type: number }
+
 export type SimToolkit = { pkg: string; sim: number; enabled: boolean }
 
 declare class CallFilterModule extends NativeModule {
@@ -26,6 +29,7 @@ declare class CallFilterModule extends NativeModule {
   clearLog(): void
   test(number: string, simId: string): { blocked: boolean; reason: string }
   simToolkits(): SimToolkit[]
+  recentCalls(limit: number): RecentCall[]
   openPackageSettings(pkg: string): void
 }
 

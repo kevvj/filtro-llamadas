@@ -71,6 +71,8 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
         <Divider />
         <ToggleRow label="Bloquear números ocultos" hint="Llamadas privadas o sin número" value={cfg.blockPrivate} onChange={(v) => update((x) => ({ ...x, blockPrivate: v }))} />
         <Divider />
+        <ToggleRow label="Preguntar si era spam" hint="Al colgar con un desconocido, una notificación para marcarlo con un toque" value={cfg.askSpam} onChange={(v) => update((x) => ({ ...x, askSpam: v }))} />
+        <Divider />
         <ToggleRow
           label="No molestar"
           hint="En este horario solo entran contactos y permitidos"
