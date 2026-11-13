@@ -1,21 +1,139 @@
 # Filtro de llamadas
 
-App Android (React Native / Expo) para filtrar llamadas entrantes. Todo local, sin servidor.
+App Android para decidir qué llamadas entran a tu celular. Funciona **por SIM**, **por país** y con una **lista de spam**
+de la que no se sale. Todo se guarda en el teléfono, sin cuentas, servidores ni internet.
 
-- Reglas por SIM: todas, solo contactos o ninguna.
-- Solo llamadas de ciertos países (detecta tu país por el número de tu SIM).
-- Spam: un número marcado no vuelve a entrar nunca.
-- Permitidos, prefijos bloqueados, números ocultos, No molestar por horario, historial y "Probar un número".
+<p align="center">
+  <img src="docs/lineas.png" width="240" alt="Reglas por línea">
+  <img src="docs/spam.png" width="240" alt="Lista de spam">
+  <img src="docs/historial.png" width="240" alt="Historial de llamadas bloqueadas">
+</p>
 
 ## Descargar
-APK en [Releases](../../releases/latest). Requiere Android 10 o superior. Al abrirla, toca "Activar filtro" y elige
-la app como filtro de llamadas.
+
+**[Descargar APK](https://github.com/kevvj/filtro-llamadas/releases/latest/download/filtro-llamadas.apk)** (Android 10 o superior)
+
+1. Abre el enlace desde el celular y descarga la APK.
+2. Si Android lo pide, permite instalar apps de esta fuente.
+3. Abre la app, acepta los permisos (teléfono y contactos) y toca **Activar filtro**.
+   Android te pedirá elegirla como *app de filtro de llamadas*: sin ese paso no puede bloquear nada.
+
+## Qué hace
+
+### Reglas por línea
+Si tienes dos SIMs, cada una tiene su propia regla:
+
+| Opción | Qué entra |
+|---|---|
+| **Todas** | Todas las llamadas, salvo spam y lo que bloquees aparte. |
+| **Contactos** | Solo tus contactos y los números permitidos. Los desconocidos no entran. |
+| **Ninguna** | Nada por esa línea, salvo los números permitidos. |
+
+Ejemplo: la SIM personal recibe todo y la del trabajo solo contactos; o una línea solo para datos que no recibe llamadas.
+
+### Solo llamadas de ciertos países
+La app detecta tu país por el número de tu SIM (+57, +52...) o, si no lo tiene, por el país de la SIM o de la red.
+Al activar la opción, por defecto solo entran llamadas de ese país. Puedes agregar otros o cambiarlo por completo
+desde un buscador de países. Se configura por línea.
+
+<p align="center">
+  <img src="docs/paises.png" width="240" alt="Selector de países">
+  <img src="docs/ajustes.png" width="240" alt="Ajustes y probar un número">
+</p>
+
+### Spam
+Un número marcado como spam **no vuelve a entrar nunca**, por ninguna línea, aunque esté en tus contactos.
+Se puede marcar a mano o con un toque desde el historial. Quitarlo pide confirmación.
+
+### Además
+- **Permitidos**: números que siempre entran, aunque la línea filtre desconocidos o países.
+- **Prefijos bloqueados**: todos los números que empiecen igual (por ejemplo `+57601` o `900`).
+- **Números ocultos**: bloquea las llamadas privadas o sin número.
+- **No molestar**: en un horario (por ejemplo 22:00 a 07:00) solo entran contactos y permitidos.
+- **Historial**: cada llamada bloqueada con su motivo, la línea y la hora, y un resumen por motivo.
+- **Probar un número**: dice si una llamada entraría o no, y por qué, sin esperar a que llamen.
+- **Interruptor general** para apagar el filtro sin perder la configuración.
+
+### Orden en que se decide
+
+```
+filtro apagado → entra
+número oculto  → se bloquea si está activado "Bloquear números ocultos"
+spam           → se bloquea siempre
+permitidos     → entra siempre
+línea "Ninguna"→ se bloquea
+prefijo        → se bloquea
+país           → se bloquea si no está en la lista de esa línea
+contactos      → si la línea es "Contactos" o es horario de No molestar, solo entran contactos
+```
+
+Las llamadas bloqueadas se rechazan sin sonar y quedan en el registro de llamadas del teléfono.
+
+## Privacidad
+- No hay servidor: la configuración y el historial viven solo en el teléfono.
+- La app no envía datos a ningún lado: no tiene cuentas, analíticas ni conexión a servidores.
+- Los contactos solo se consultan en el momento de una llamada para saber si el número es conocido.
+
+## Cómo funciona por dentro
+
+```
+React Native (src/)  ──  guarda la config en JSON  ──►  SharedPreferences
+                                                          ▲
+Android ── llamada entrante ──► FilterScreeningService ───┘ lee reglas, decide, rechaza y anota
+```
+
+- **Interfaz**: React Native con Expo (SDK 58) y TypeScript. Pestañas: Líneas, Listas, Historial y Ajustes.
+- **Filtro real**: módulo nativo local en Kotlin (`modules/call-filter`), basado en el
+  [`CallScreeningService`](https://developer.android.com/reference/android/telecom/CallScreeningService) de Android.
+  La SIM de cada llamada se identifica con su `PhoneAccountHandle`.
+- **Diseño**: basado en el DESIGN.md de Mercury (modo noche) de
+  [awesome-design-md](https://github.com/VoltAgent/awesome-design-md). Copia en `diseno/mercury-DESIGN.md`.
+
+```
+src/
+  App.tsx              estado, permisos y pestañas
+  config.ts            tipos, valores por defecto, guardar y cargar
+  countries.ts         países e indicativos
+  screens/             Lines, Lists, History, Settings, CountryPicker
+  ui.tsx, theme.ts     componentes y colores
+modules/call-filter/
+  android/.../FilterEngine.kt            reglas y decisión
+  android/.../FilterScreeningService.kt  servicio que filtra las llamadas
+  android/.../CallFilterModule.kt        funciones para JavaScript
+  demo.ts                                imitación del módulo para la vista previa web
+```
 
 ## Desarrollo
-```
+
+Requisitos: Node 22+, JDK 17 y Android SDK.
+
+```bash
 npm install
-npx expo start --web          # vista previa: http://localhost:8081/telefono.html
-npx expo prebuild -p android  # genera android/
-cd android && ./gradlew assembleRelease
+npx tsc --noEmit                      # revisar tipos
+npx expo start --web                  # vista previa en el navegador
 ```
-El filtrado real está en `modules/call-filter` (CallScreeningService en Kotlin).
+
+La vista previa web se ve dentro de un marco de celular en `http://localhost:8081/telefono.html`. Usa 2 SIMs de
+ejemplo y la misma lógica de filtrado escrita en JavaScript (`modules/call-filter/demo.ts`); si cambias
+`FilterEngine.kt`, cambia también ese archivo.
+
+Para compilar la APK:
+
+```bash
+npx expo prebuild -p android          # genera la carpeta android/
+cd android && ./gradlew assembleRelease
+# APK en android/app/build/outputs/apk/release/app-release.apk
+```
+
+> En Windows la compilación nativa falla si la ruta del proyecto es larga (límite de 260 caracteres).
+> Usa una ruta corta (por ejemplo `C:\fl`) o deja que GitHub Actions compile.
+
+Cada push a `main` compila la APK en GitHub Actions (`.github/workflows/apk.yml`) y la publica en el release
+[`latest`](https://github.com/kevvj/filtro-llamadas/releases/latest).
+
+Para probar el bloqueo en un emulador: `adb emu gsm call +573001234567`.
+
+## Limitaciones
+- Solo Android 10 o superior (el rol de filtro de llamadas no existe antes). No hay versión de iOS.
+- La APK está firmada con una llave de pruebas: sirve para instalarla, no para publicarla en Google Play.
+- Si otra app ya es el filtro de llamadas del teléfono, hay que elegir una de las dos.

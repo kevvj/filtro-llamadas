@@ -44,7 +44,7 @@ export default function CountryPicker({ visible, selected, onClose, onSave }: Pr
               const on = sel.includes(item.code)
               return (
                 <Pressable onPress={() => toggle(item.code)} style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 52, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line }}>
-                  <Text style={{ fontSize: 20 }}>{flag(item.iso)}</Text>
+                  {flag(item.iso) ? <Text style={{ fontSize: 20 }}>{flag(item.iso)}</Text> : null}
                   <Text style={{ color: c.text, fontSize: 15, flex: 1, fontFamily: f.regular }}>{item.name}</Text>
                   <Text style={{ color: c.mute, fontSize: 13, fontFamily: f.regular, marginRight: 4 }}>+{item.code}</Text>
                   <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={22} color={on ? c.peri : c.cardAlt} />

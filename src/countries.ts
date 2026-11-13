@@ -1,3 +1,5 @@
+import { Platform } from "react-native"
+
 export type Country = { iso: string; name: string; code: string }
 
 // Indicativo internacional (sin +). Latinoamérica primero, luego el resto más común.
@@ -68,6 +70,6 @@ export function countryFromNumber(num: string): Country | undefined {
   return [...COUNTRIES].sort((a, b) => b.code.length - a.code.length).find((x) => d.startsWith(x.code))
 }
 
-// Bandera emoji a partir del código ISO.
+// Bandera emoji a partir del código ISO. En web no (Chrome en Windows las muestra como letras).
 export const flag = (iso: string) =>
-  iso.length === 2 ? String.fromCodePoint(...[...iso.toUpperCase()].map((ch) => 0x1f1a5 + ch.charCodeAt(0))) : "🌐"
+  Platform.OS === "web" ? "" : iso.length === 2 ? String.fromCodePoint(...[...iso.toUpperCase()].map((ch) => 0x1f1a5 + ch.charCodeAt(0))) : "🌐"

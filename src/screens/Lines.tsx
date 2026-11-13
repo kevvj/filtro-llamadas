@@ -24,7 +24,7 @@ const MODE_HINT: Record<Mode, string> = {
 const countryLabel = (code: string, homeIso: string) => {
   const home = byIso(homeIso)
   const x = home?.code === code ? home : COUNTRIES.find((k) => k.code === code)
-  return x ? `${flag(x.iso)}  ${x.name}` : `+${code}`
+  return x ? [flag(x.iso), x.name].filter(Boolean).join("  ") : `+${code}`
 }
 
 export default function LinesScreen({ cfg, sims, update }: Props) {
