@@ -19,8 +19,8 @@ jobs:
     name: Lint, tipos y pruebas
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -37,14 +37,14 @@ jobs:
     name: Secretos y dependencias
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Buscar contraseñas o llaves en el código
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Dependencias con fallos graves conocidos
@@ -62,13 +62,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # versionCode de la APK: sube en cada ejecución (lo usa app.config.js y lo compara el actualizador)
+      BUILD_NUMBER: ${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -80,11 +83,24 @@ jobs:
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 --no-daemon
       - name: Renombrar
         run: cp android/app/build/outputs/apk/release/app-release.apk filtro-llamadas.apk
+      - name: Datos de la versión para el actualizador
+        run: |
+          node -e '
+            const expo = require("./app.config.js")({ config: require("./app.json").expo })
+            const code = expo.android.versionCode
+            const info = {
+              versionCode: code,
+              version: expo.version,
+              url: "https://github.com/" + process.env.GITHUB_REPOSITORY + "/releases/download/latest/filtro-llamadas.apk?v=" + code,
+            }
+            require("fs").writeFileSync("version.json", JSON.stringify(info, null, 2))
+            console.log(info)
+          '
       - name: Publicar en Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(node -p "require('./app.json').expo.version")
-          NOTES="Versión $VERSION (commit ${GITHUB_SHA::7}). Requiere Android 10 o superior."
+          VERSION=$(node -p "require('./version.json').version")
+          NOTES="Versión $VERSION (commit ${GITHUB_SHA::7}). Requiere Android 10 o superior. La app se actualiza sola."
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest filtro-llamadas.apk --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest
+          gh release create latest filtro-llamadas.apk version.json --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest

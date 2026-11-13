@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { installedVersion } from "../update"
 import CallFilter, { Sim } from "../../modules/call-filter"
 import { Config, REASONS, hhmm } from "../config"
 import { c, f } from "../theme"
@@ -84,6 +85,10 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
         <Sub style={{ marginTop: 4, marginBottom: 14 }}>Si no ves tus SIMs o no se reconocen tus contactos, revisa los permisos.</Sub>
         <Button kind="glass" label="Abrir ajustes de la app" onPress={() => CallFilter?.openAppSettings()} />
       </Card>
+
+      <Sub style={{ textAlign: "center", color: c.mute, marginTop: 4 }}>
+        {installedVersion() ? `Versión ${installedVersion()} · se actualiza sola` : "Vista previa"}
+      </Sub>
     </View>
   )
 }

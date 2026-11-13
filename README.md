@@ -15,8 +15,18 @@ de la que no se sale. Todo se guarda en el teléfono, sin cuentas, servidores ni
 
 1. Abre el enlace desde el celular y descarga la APK.
 2. Si Android lo pide, permite instalar apps de esta fuente.
-3. Abre la app, acepta los permisos (teléfono y contactos) y toca **Activar filtro**.
+3. Abre la app, acepta los permisos (teléfono, contactos y notificaciones) y toca **Activar filtro**.
    Android te pedirá elegirla como *app de filtro de llamadas*: sin ese paso no puede bloquear nada.
+
+### Actualizaciones automáticas
+Solo hay que instalarla una vez. Al abrirla, la app revisa si hay una versión nueva en los
+[Releases de este repo](https://github.com/kevvj/filtro-llamadas/releases/latest), la descarga, la instala y se
+vuelve a abrir sola. La configuración, el spam y el historial se conservan.
+
+- La primera vez Android pide permitir que la app instale actualizaciones, y confirmar esa primera actualización.
+  Desde Android 12, las siguientes son automáticas.
+- Si Android no deja reabrirla sola, aparece una notificación *Filtro de llamadas actualizado*: un toque y abre.
+- La versión instalada se ve al final de **Ajustes**.
 
 ## Qué hace
 
@@ -96,6 +106,7 @@ src/
   countries.ts         países e indicativos
   screens/             Lines, Lists, History, Settings, CountryPicker
   ui.tsx, theme.ts     componentes y colores
+modules/apk-updater/                     descarga e instala versiones nuevas y reabre la app
 modules/call-filter/
   android/.../FilterEngine.kt            reglas y decisión
   android/.../FilterScreeningService.kt  servicio que filtra las llamadas
@@ -143,7 +154,7 @@ Nada llega a la APK sin pasar estas revisiones (`.github/workflows/ci.yml`), en 
 | **Dependency review** | En pull requests, dependencias nuevas con fallos graves. |
 | **npm ci** | Un `package-lock.json` que no coincida con `package.json`. |
 
-Solo si todo pasa, el mismo workflow compila la APK y la publica en el release
+Solo si todo pasa, el mismo workflow compila la APK y la publica, junto a `version.json` (lo que lee el actualizador), en el release
 [`latest`](https://github.com/kevvj/filtro-llamadas/releases/latest). Además, el hook `.githooks/pre-push` corre
 `npm run check` en tu PC y cancela el push si algo falla.
 

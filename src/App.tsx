@@ -12,6 +12,7 @@ import LinesScreen from "./screens/Lines"
 import ListsScreen from "./screens/Lists"
 import HistoryScreen from "./screens/History"
 import SettingsScreen from "./screens/Settings"
+import UpdateBanner from "./UpdateBanner"
 
 type Tab = "lines" | "lists" | "history" | "settings"
 
@@ -25,7 +26,8 @@ const TABS: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] 
 async function askPermissions() {
   if (Platform.OS !== "android") return
   const P = PermissionsAndroid.PERMISSIONS
-  const list = [P.READ_PHONE_STATE, P.READ_CONTACTS, P.READ_PHONE_NUMBERS].filter(Boolean)
+  // POST_NOTIFICATIONS: aviso de "app actualizada" si Android no deja reabrirla sola
+  const list = [P.READ_PHONE_STATE, P.READ_CONTACTS, P.READ_PHONE_NUMBERS, P.POST_NOTIFICATIONS].filter(Boolean)
   await PermissionsAndroid.requestMultiple(list as any)
 }
 
@@ -90,6 +92,8 @@ export default function App() {
               {blockedToday === 1 ? "llamada bloqueada hoy" : "llamadas bloqueadas hoy"} · {cfg.spam.length} en spam
             </Text>
           </View>
+
+          <UpdateBanner />
 
           {!hasRole && (
             <View style={st.banner}>
