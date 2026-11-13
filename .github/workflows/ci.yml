@@ -1,0 +1,90 @@
+name: CI
+
+# Revisa cada push y cada pull request. La APK solo se compila y publica si todas las revisiones pasan.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codigo:
+    name: Lint, tipos y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # npm ci falla si package-lock.json no coincide con package.json
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Pruebas del filtro
+        run: npm test
+
+  seguridad:
+    name: Secretos y dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Buscar contraseñas o llaves en el código
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Dependencias con fallos graves conocidos
+        run: npm audit --omit=dev --audit-level=high
+      - name: Dependencias nuevas peligrosas (solo en pull requests)
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  apk:
+    name: Compilar y publicar APK
+    needs: [codigo, seguridad]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - name: Generar proyecto Android
+        run: npx expo prebuild -p android --no-install
+      - name: Compilar APK
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 --no-daemon
+      - name: Renombrar
+        run: cp android/app/build/outputs/apk/release/app-release.apk filtro-llamadas.apk
+      - name: Publicar en Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          NOTES="Versión $VERSION (commit ${GITHUB_SHA::7}). Requiere Android 10 o superior."
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest filtro-llamadas.apk --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest

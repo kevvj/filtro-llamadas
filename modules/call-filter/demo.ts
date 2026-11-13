@@ -1,6 +1,7 @@
 // Solo para la vista previa en el navegador (expo start --web): imita al módulo nativo
-// con 2 SIMs de ejemplo, guarda en localStorage y replica la lógica de FilterEngine.kt.
+// con 2 SIMs de ejemplo, guarda en localStorage y usa engine.ts (misma lógica que FilterEngine.kt).
 import type { Sim } from "./index"
+import { decide, sameNumber } from "./engine"
 
 const SIMS: Sim[] = [
   { id: "1", slot: 0, name: "Personal", carrier: "Claro", countryIso: "CO", number: "+57 300 555 0101" },
@@ -25,49 +26,11 @@ const SAMPLE_LOG = JSON.stringify([
   { number: "+576015550000", sim: "1", reason: "prefix", time: now - 26 * 3600e3 },
 ])
 
-const digits = (n: string) => {
-  const d = n.replace(/\D/g, "")
-  return n.trim().startsWith("00") ? d.replace(/^00/, "") : d
-}
-const same = (a: string, b: string) => {
-  const x = digits(a), y = digits(b)
-  if (!x || !y) return false
-  if (x === y) return true
-  const [s, l] = x.length <= y.length ? [x, y] : [y, x]
-  return s.length >= 7 && l.endsWith(s)
-}
-const inList = (arr: any[] | undefined, n: string) => (arr ?? []).some((e) => same(typeof e === "string" ? e : e.number, n))
-
-function decide(raw: string, simId: string) {
-  const cfg = JSON.parse(store.get("config", "{}") || "{}")
-  if (cfg.enabled === false) return { blocked: false, reason: "filtro apagado" }
-  const rule = cfg.sims?.[simId] ?? cfg.defaultRule ?? {}
-  const mode = rule.mode ?? "all"
-  const n = raw.trim()
-  if (!digits(n)) {
-    if (cfg.blockPrivate) return { blocked: true, reason: "private" }
-    if (mode === "none") return { blocked: true, reason: "line_off" }
-    if (mode === "contacts") return { blocked: true, reason: "unknown" }
-    return { blocked: false, reason: "ok" }
-  }
-  if (inList(cfg.spam, n)) return { blocked: true, reason: "spam" }
-  if (inList(cfg.allow, n)) return { blocked: false, reason: "allowlist" }
-  if (mode === "none") return { blocked: true, reason: "line_off" }
-  if ((cfg.prefixes ?? []).some((p: string) => digits(p) && digits(n).startsWith(digits(p)))) return { blocked: true, reason: "prefix" }
-  if (rule.countryOnly) {
-    const intl = n.startsWith("+") || n.startsWith("00")
-    const codes: string[] = rule.countries ?? []
-    const ok = intl ? codes.some((k) => k && digits(n).startsWith(k)) : codes.includes(rule.homeCode)
-    if (!ok) return { blocked: true, reason: "country" }
-  }
-  const q = cfg.quiet
-  let quiet = false
-  if (q?.enabled) {
-    const d = new Date(), m = d.getHours() * 60 + d.getMinutes()
-    quiet = q.from <= q.to ? m >= q.from && m < q.to : m >= q.from || m < q.to
-  }
-  if ((mode === "contacts" || quiet) && !CONTACTS.some((k) => same(k, n))) return { blocked: true, reason: mode === "contacts" ? "unknown" : "quiet" }
-  return { blocked: false, reason: "ok" }
+function test(raw: string, simId: string) {
+  let cfg = null
+  try { cfg = JSON.parse(store.get("config", "") || "null") } catch {}
+  const d = new Date()
+  return decide(cfg, raw, simId, (n) => CONTACTS.some((k) => sameNumber(k, n)), d.getHours() * 60 + d.getMinutes())
 }
 
 export const demoModule = {
@@ -80,5 +43,5 @@ export const demoModule = {
   setConfig: (j: string) => store.set("config", j),
   getLog: () => store.get("log", SAMPLE_LOG),
   clearLog: () => store.set("log", "[]"),
-  test: decide,
+  test,
 }

@@ -4,7 +4,7 @@ import { Sim } from "../../modules/call-filter"
 import { Config, Mode, Rule } from "../config"
 import { COUNTRIES, byIso, flag } from "../countries"
 import { c, f } from "../theme"
-import { Button, Card, Chip, Divider, Eyebrow, Segmented, Sub, Title, ToggleRow } from "../ui"
+import { Button, Card, Chip, Divider, Eyebrow, Segmented, Sub, ToggleRow } from "../ui"
 import CountryPicker from "./CountryPicker"
 
 type Props = { cfg: Config; sims: Sim[]; update: (fn: (x: Config) => Config) => void }

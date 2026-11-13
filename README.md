@@ -109,7 +109,8 @@ Requisitos: Node 22+, JDK 17 y Android SDK.
 
 ```bash
 npm install
-npx tsc --noEmit                      # revisar tipos
+git config core.hooksPath .githooks   # una vez: revisa todo antes de cada push
+npm run check                         # lint + tipos + pruebas
 npx expo start --web                  # vista previa en el navegador
 ```
 
@@ -128,8 +129,23 @@ cd android && ./gradlew assembleRelease
 > En Windows la compilación nativa falla si la ruta del proyecto es larga (límite de 260 caracteres).
 > Usa una ruta corta (por ejemplo `C:\fl`) o deja que GitHub Actions compile.
 
-Cada push a `main` compila la APK en GitHub Actions (`.github/workflows/apk.yml`) y la publica en el release
-[`latest`](https://github.com/kevvj/filtro-llamadas/releases/latest).
+## Control de calidad
+
+Nada llega a la APK sin pasar estas revisiones (`.github/workflows/ci.yml`), en cada push y pull request:
+
+| Revisión | Qué frena |
+|---|---|
+| **ESLint** (`npm run lint`) | Errores de código, malas prácticas de React, `eval` o código armado desde texto, `console.log` olvidados. Cero advertencias permitidas. |
+| **TypeScript** (`npm run typecheck`) | Tipos que no cuadran, propiedades inexistentes, imports rotos. |
+| **Pruebas** (`npm test`) | Cambios que rompan el filtro: spam, países, reglas por SIM, permitidos, prefijos, ocultos y No molestar (`tests/engine.test.ts`). |
+| **gitleaks** | Contraseñas, tokens o llaves subidas por error, en todo el historial. |
+| **npm audit** | Dependencias con vulnerabilidades graves conocidas. |
+| **Dependency review** | En pull requests, dependencias nuevas con fallos graves. |
+| **npm ci** | Un `package-lock.json` que no coincida con `package.json`. |
+
+Solo si todo pasa, el mismo workflow compila la APK y la publica en el release
+[`latest`](https://github.com/kevvj/filtro-llamadas/releases/latest). Además, el hook `.githooks/pre-push` corre
+`npm run check` en tu PC y cancela el push si algo falla.
 
 Para probar el bloqueo en un emulador: `adb emu gsm call +573001234567`.
 

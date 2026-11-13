@@ -1,0 +1,4 @@
+#!/bin/sh
+# Frena el push si el código no pasa lint, tipos o pruebas.
+# Activar una vez: git config core.hooksPath .githooks
+npm run check || { echo "Push cancelado: arregla los errores de arriba."; exit 1; }

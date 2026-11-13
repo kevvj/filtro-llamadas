@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { COUNTRIES, flag } from "../countries"
@@ -8,22 +8,24 @@ import { Button, Input, Sub } from "../ui"
 type Props = { visible: boolean; selected: string[]; onClose: () => void; onSave: (codes: string[]) => void }
 
 // Selección múltiple de países (se guardan los indicativos).
-export default function CountryPicker({ visible, selected, onClose, onSave }: Props) {
+// El contenido se monta al abrir, así la selección y la búsqueda arrancan limpias cada vez.
+export default function CountryPicker(p: Props) {
+  return (
+    <Modal visible={p.visible} animationType="slide" transparent onRequestClose={p.onClose}>
+      {p.visible ? <PickerBody {...p} /> : null}
+    </Modal>
+  )
+}
+
+function PickerBody({ selected, onClose, onSave }: Props) {
   const [sel, setSel] = useState<string[]>(selected)
   const [q, setQ] = useState("")
-  useEffect(() => {
-    if (visible) {
-      setSel(selected)
-      setQ("")
-    }
-  }, [visible, selected])
 
   const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
   const list = COUNTRIES.filter((x) => norm(x.name).includes(norm(q)) || x.code.startsWith(q.replace("+", "")))
   const toggle = (code: string) => setSel((p) => (p.includes(code) ? p.filter((k) => k !== code) : [...p, code]))
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: "rgba(10,10,18,0.6)", justifyContent: "flex-end" }}>
         <View style={{ backgroundColor: c.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, height: "85%" }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
@@ -58,6 +60,5 @@ export default function CountryPicker({ visible, selected, onClose, onSave }: Pr
           </View>
         </View>
       </View>
-    </Modal>
   )
 }
