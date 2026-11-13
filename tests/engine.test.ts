@@ -49,8 +49,8 @@ test("línea en Ninguna bloquea hasta contactos, pero no a los permitidos", () =
   assert.deepEqual(run(cfg, "+573150000000"), { blocked: false, reason: "allowlist" })
 })
 
-test("SIM desconocida usa la regla general", () => {
-  const cfg = config({ defaultRule: rule({ mode: "none" }) })
+test("sin SIMs conocidas se usa la regla general", () => {
+  const cfg = config({ sims: {}, defaultRule: rule({ mode: "none" }) })
   assert.equal(run(cfg, "+573209998877", "99").reason, "line_off")
 })
 
@@ -68,7 +68,7 @@ test("spam gana sobre permitidos", () => {
 })
 
 test("filtro por país", () => {
-  const cfg = config({ sims: { "1": rule({ countryOnly: true }) } })
+  const cfg = config({ sims: { "1": rule({ countryOnly: true }), "2": rule() } })
   assert.equal(run(cfg, "+573209998877").blocked, false, "mismo país")
   assert.deepEqual(run(cfg, "+525512345678"), { blocked: true, reason: "country" })
   assert.equal(run(cfg, "005255123456").reason, "country", "prefijo 00")
@@ -137,4 +137,11 @@ test("insistencia nunca salta spam, país, prefijo ni línea en Ninguna", () => 
   assert.equal(decide(config({ repeat: rep, sims: { "1": rule({ mode: "none" }) } }), "+573209998877", "1", isContact, NOON, many).reason, "line_off")
   assert.equal(decide(config({ repeat: rep, sims: { "1": rule({ countryOnly: true }) } }), "+525512345678", "1", isContact, NOON, many).reason, "country")
   assert.equal(decide(config({ repeat: rep, prefixes: ["+57601"] }), "+576015550000", "1", isContact, NOON, many).reason, "prefix")
+})
+
+test("SIM desconocida: usa la regla más estricta de las SIMs, no la de por defecto", () => {
+  const cfg = config({ sims: { "8": rule(), "9": rule({ mode: "contacts" }) } })
+  assert.deepEqual(run(cfg, "+573209998877", "default"), { blocked: true, reason: "unknown" })
+  assert.equal(run(cfg, CONTACT, "default").blocked, false, "los contactos siguen entrando")
+  assert.equal(run(config({ sims: {} }), "+573209998877", "default").blocked, false, "sin SIMs: regla por defecto")
 })

@@ -100,6 +100,13 @@ object FilterEngine {
     return n
   }
 
+  private val RANK = mapOf("all" to 0, "contacts" to 1, "none" to 2)
+  private fun strictest(sims: JSONObject?): JSONObject? {
+    if (sims == null) return null
+    return sims.keys().asSequence().mapNotNull { sims.optJSONObject(it) }
+      .maxByOrNull { RANK[it.optString("mode", "all")] ?: 0 }
+  }
+
   fun decide(ctx: Context, rawNumber: String?, simId: String): Decision {
     val cfgText = getConfig(ctx)
     if (cfgText.isBlank()) return Decision(false, "sin configurar")
@@ -108,7 +115,8 @@ object FilterEngine {
 
     val number = rawNumber?.trim().orEmpty()
     val sims = cfg.optJSONObject("sims")
-    val rule = sims?.optJSONObject(simId) ?: cfg.optJSONObject("defaultRule") ?: JSONObject()
+    // SIM desconocida: la regla más estricta de las SIMs (mejor un desconocido de más bloqueado que spam colado)
+    val rule = sims?.optJSONObject(simId) ?: strictest(sims) ?: cfg.optJSONObject("defaultRule") ?: JSONObject()
     val mode = rule.optString("mode", "all")
     android.util.Log.i("FiltroLlamadas", "sim=$simId reglas=${sims?.keys()?.asSequence()?.toList()} usa=${if (sims?.has(simId) == true) simId else "defaultRule"} modo=$mode")
 

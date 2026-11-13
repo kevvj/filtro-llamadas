@@ -31,6 +31,13 @@ export function inQuietHours(quiet: { enabled?: boolean; from?: number; to?: num
 
 // cfg: la configuración guardada (JSON). isContact: si el número está en los contactos.
 // countRecent(n, min): veces que n fue bloqueado en los últimos min minutos (insistencia).
+const RANK: Record<string, number> = { all: 0, contacts: 1, none: 2 }
+function strictest(sims: Record<string, any> | undefined) {
+  const list = Object.values(sims ?? {})
+  if (!list.length) return undefined
+  return list.reduce((a, b) => ((RANK[b.mode ?? "all"] ?? 0) > (RANK[a.mode ?? "all"] ?? 0) ? b : a))
+}
+
 export function decide(
   cfg: any,
   raw: string | null | undefined,
@@ -41,7 +48,8 @@ export function decide(
 ): Decision {
   if (!cfg) return { blocked: false, reason: "sin configurar" }
   if (cfg.enabled === false) return { blocked: false, reason: "filtro apagado" }
-  const rule = cfg.sims?.[simId] ?? cfg.defaultRule ?? {}
+  // SIM desconocida: la regla más estricta de las SIMs (igual que FilterEngine.kt)
+  const rule = cfg.sims?.[simId] ?? strictest(cfg.sims) ?? cfg.defaultRule ?? {}
   const mode = rule.mode ?? "all"
   const n = (raw ?? "").trim()
 

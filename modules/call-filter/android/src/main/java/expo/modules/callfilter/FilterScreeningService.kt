@@ -49,7 +49,8 @@ class FilterScreeningService : CallScreeningService() {
 
     // Id de la SIM (subscriptionId) por la que entra la llamada; "default" si no se puede saber.
     fun simIdOf(ctx: Context, handle: PhoneAccountHandle?): String {
-      if (handle == null) return "default"
+      // Samsung (y otros) no pasan el accountHandle al filtro: se mira qué SIM está sonando
+      if (handle == null) return ringingSim(ctx) ?: "default"
       try {
         if (Build.VERSION.SDK_INT >= 30) {
           val tm = ctx.getSystemService(TelephonyManager::class.java)
@@ -66,7 +67,25 @@ class FilterScreeningService : CallScreeningService() {
           if (!icc.isNullOrEmpty() && handle.id.startsWith(icc)) return info.subscriptionId.toString()
         }
       } catch (e: Exception) { }
-      return "default"
+      return ringingSim(ctx) ?: "default"
+    }
+
+    // La única SIM con una llamada entrante sonando; null si no hay una sola o no se puede saber.
+    private fun ringingSim(ctx: Context): String? = try {
+      val sm = ctx.getSystemService(SubscriptionManager::class.java)
+      val subs = sm.activeSubscriptionInfoList.orEmpty()
+      if (subs.size == 1) subs[0].subscriptionId.toString()
+      else if (Build.VERSION.SDK_INT >= 31) {
+        val tm = ctx.getSystemService(TelephonyManager::class.java)
+        val ringing = subs.filter {
+          tm.createForSubscriptionId(it.subscriptionId).callStateForSubscription == TelephonyManager.CALL_STATE_RINGING
+        }
+        Log.i(TAG, "SIMs sonando: ${ringing.map { it.subscriptionId }}")
+        ringing.singleOrNull()?.subscriptionId?.toString()
+      } else null
+    } catch (e: Exception) {
+      Log.e(TAG, "no se pudo ver qué SIM suena", e)
+      null
     }
   }
 }
