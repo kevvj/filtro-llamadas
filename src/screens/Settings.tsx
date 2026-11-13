@@ -1,0 +1,89 @@
+import { useState } from "react"
+import { Pressable, Text, View } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import CallFilter, { Sim } from "../../modules/call-filter"
+import { Config, REASONS, hhmm } from "../config"
+import { c, f } from "../theme"
+import { Button, Card, Divider, Eyebrow, Input, Segmented, Sub, ToggleRow } from "../ui"
+
+type Props = { cfg: Config; sims: Sim[]; update: (fn: (x: Config) => Config) => void }
+
+function TimeStepper({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  const step = (d: number) => onChange((value + d + 1440) % 1440)
+  const btn = { width: 32, height: 32, borderRadius: 16, backgroundColor: c.glass, alignItems: "center" as const, justifyContent: "center" as const }
+  return (
+    <View style={{ flex: 1, alignItems: "center", backgroundColor: c.bg, borderRadius: 14, paddingVertical: 14 }}>
+      <Eyebrow>{label.toUpperCase()}</Eyebrow>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 }}>
+        <Pressable onPress={() => step(-30)} hitSlop={6} style={btn}>
+          <Ionicons name="remove" size={16} color={c.text} />
+        </Pressable>
+        <Text style={{ color: c.text, fontSize: 22, fontFamily: f.light, fontVariant: ["tabular-nums"] }}>{hhmm(value)}</Text>
+        <Pressable onPress={() => step(30)} hitSlop={6} style={btn}>
+          <Ionicons name="add" size={16} color={c.text} />
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+export default function SettingsScreen({ cfg, sims, update }: Props) {
+  const [num, setNum] = useState("")
+  const [picked, setSim] = useState("")
+  const sim = sims.some((s) => s.id === picked) ? picked : (sims[0]?.id ?? "default")
+  const [result, setResult] = useState<{ blocked: boolean; reason: string } | null>(null)
+
+  const test = () => {
+    if (!num.trim()) return
+    setResult(CallFilter ? CallFilter.test(num.trim(), sim) : { blocked: false, reason: "sin módulo nativo" })
+  }
+
+  return (
+    <View>
+      <Card>
+        <ToggleRow label="Filtro activado" hint="Apágalo para dejar entrar todas las llamadas" value={cfg.enabled} onChange={(v) => update((x) => ({ ...x, enabled: v }))} />
+        <Divider />
+        <ToggleRow label="Bloquear números ocultos" hint="Llamadas privadas o sin número" value={cfg.blockPrivate} onChange={(v) => update((x) => ({ ...x, blockPrivate: v }))} />
+        <Divider />
+        <ToggleRow
+          label="No molestar"
+          hint="En este horario solo entran contactos y permitidos"
+          value={cfg.quiet.enabled}
+          onChange={(v) => update((x) => ({ ...x, quiet: { ...x.quiet, enabled: v } }))}
+        />
+        {cfg.quiet.enabled && (
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+            <TimeStepper label="Desde" value={cfg.quiet.from} onChange={(v) => update((x) => ({ ...x, quiet: { ...x.quiet, from: v } }))} />
+            <TimeStepper label="Hasta" value={cfg.quiet.to} onChange={(v) => update((x) => ({ ...x, quiet: { ...x.quiet, to: v } }))} />
+          </View>
+        )}
+      </Card>
+
+      <Card>
+        <Text style={{ color: c.text, fontSize: 22, fontFamily: f.regular }}>Probar un número</Text>
+        <Sub style={{ marginTop: 4, marginBottom: 16 }}>Mira si una llamada entraría con tu configuración actual.</Sub>
+        <Input placeholder="+57 300 123 4567" keyboardType="phone-pad" value={num} onChangeText={(t) => { setNum(t); setResult(null) }} />
+        {sims.length > 1 && (
+          <View style={{ marginTop: 10 }}>
+            <Segmented value={sim} onChange={(v) => { setSim(v); setResult(null) }} options={sims.map((s) => ({ value: s.id, label: s.name }))} />
+          </View>
+        )}
+        <View style={{ marginTop: 14 }}>
+          <Button label="Probar" onPress={test} />
+        </View>
+        {result && (
+          <View style={{ marginTop: 14, padding: 16, borderRadius: 14, backgroundColor: result.blocked ? c.dangerSoft : c.periSoft }}>
+            <Text style={{ color: result.blocked ? c.danger : c.peri, fontFamily: f.medium, fontSize: 15 }}>{result.blocked ? "Se bloquearía" : "Entraría"}</Text>
+            <Sub style={{ marginTop: 2 }}>{REASONS[result.reason] ?? result.reason}</Sub>
+          </View>
+        )}
+      </Card>
+
+      <Card>
+        <Text style={{ color: c.text, fontSize: 15, fontFamily: f.regular }}>Permisos</Text>
+        <Sub style={{ marginTop: 4, marginBottom: 14 }}>Si no ves tus SIMs o no se reconocen tus contactos, revisa los permisos.</Sub>
+        <Button kind="glass" label="Abrir ajustes de la app" onPress={() => CallFilter?.openAppSettings()} />
+      </Card>
+    </View>
+  )
+}

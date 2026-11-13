@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+build.log
+preview/expo-web.log
+/android/
+/ios/
+/dist/
+*.apk
+CLAUDE.md
+modules/call-filter/android/build/
