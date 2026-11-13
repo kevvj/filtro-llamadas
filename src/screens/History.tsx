@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { Sim } from "../../modules/call-filter"
 import { Config, LogItem, REASONS, sameNumber } from "../config"
@@ -15,8 +16,12 @@ const when = (t: number) => {
   return today ? h : `${d.toLocaleDateString([], { day: "numeric", month: "short" })}, ${h}`
 }
 
+const PAGE = 10
+
 // Llamadas bloqueadas por el filtro, con acciones rápidas.
 export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props) {
+  // se muestran de a 10: con "Ver más" se cargan otras, sin una lista infinita
+  const [shown, setShown] = useState(PAGE)
   if (!log.length) return <Empty text={"Aún no se ha bloqueado ninguna llamada.\nAquí verás cada una y el motivo."} />
 
   const simName = (id: string) => {
@@ -27,7 +32,7 @@ export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props
   return (
     <View>
       <Card style={{ paddingVertical: 6 }}>
-        {log.map((l, i) => {
+        {log.slice(0, shown).map((l, i) => {
           const isSpam = cfg.spam.some((e) => sameNumber(e.number, l.number))
           const isAllowed = cfg.allow.some((e) => sameNumber(e.number, l.number))
           return (
@@ -48,6 +53,11 @@ export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props
           )
         })}
       </Card>
+      {log.length > shown && (
+        <View style={{ marginBottom: 12 }}>
+          <Button kind="glass" label={`Ver más (${log.length - shown})`} onPress={() => setShown((n) => n + PAGE)} />
+        </View>
+      )}
       <Button kind="glass" label="Borrar historial" onPress={() => confirm("Borrar historial", "Se borra la lista de llamadas bloqueadas (no el spam).", "Borrar", onClear)} />
       <Stats log={log} />
     </View>
