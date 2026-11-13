@@ -7,4 +7,5 @@ preview/expo-web.log
 /dist/
 *.apk
 CLAUDE.md
-modules/call-filter/android/build/
+modules/*/android/build/
+build-modulos.log

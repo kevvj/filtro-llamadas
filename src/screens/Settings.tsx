@@ -36,6 +36,7 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
   const sim = sims.some((s) => s.id === picked) ? picked : (sims[0]?.id ?? "default")
   const [result, setResult] = useState<{ blocked: boolean; reason: string } | null>(null)
   const [backupMsg, setBackupMsg] = useState("")
+  const [tileMsg, setTileMsg] = useState(false)
 
   const saveBackup = async () => {
     try {
@@ -123,6 +124,22 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
             <Sub style={{ marginTop: 2 }}>{REASONS[result.reason] ?? result.reason}</Sub>
           </View>
         )}
+      </Card>
+
+      <Card>
+        <Text style={{ color: c.text, fontSize: 15, fontFamily: f.regular }}>Atajos rápidos</Text>
+        <Sub style={{ marginTop: 4, marginBottom: 14 }}>
+          Enciende o apaga el filtro y No molestar desde el panel de notificaciones, sin abrir la app.
+        </Sub>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Button kind="glass" label="Agregar Filtro" onPress={() => { if (!CallFilter?.addTile("filter")) setTileMsg(true) }} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button kind="glass" label="Agregar No molestar" onPress={() => { if (!CallFilter?.addTile("quiet")) setTileMsg(true) }} />
+          </View>
+        </View>
+        {tileMsg ? <Sub style={{ marginTop: 10 }}>Desliza el panel de notificaciones, toca el lápiz (editar) y arrastra los atajos de Filtro de llamadas.</Sub> : null}
       </Card>
 
       <Card>

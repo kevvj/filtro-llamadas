@@ -15,6 +15,7 @@ declare class CallFilterModule extends NativeModule {
   hasScreeningRole(): boolean
   requestScreeningRole(): boolean
   openAppSettings(): void
+  addTile(kind: "filter" | "quiet"): boolean
   getDeviceCountry(): string
   getSims(): Sim[]
   getConfig(): string

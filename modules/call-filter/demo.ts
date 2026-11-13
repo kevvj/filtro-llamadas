@@ -39,6 +39,7 @@ export const demoModule = {
   hasScreeningRole: () => true,
   requestScreeningRole: () => true,
   openAppSettings: () => {},
+  addTile: () => false,
   getDeviceCountry: () => "CO",
   getSims: () => SIMS,
   getConfig: () => store.get("config", ""),

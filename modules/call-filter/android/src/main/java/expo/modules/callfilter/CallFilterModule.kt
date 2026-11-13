@@ -1,6 +1,9 @@
 package expo.modules.callfilter
 
+import android.app.StatusBarManager
 import android.app.role.RoleManager
+import android.content.ComponentName
+import android.graphics.drawable.Icon
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -34,6 +37,17 @@ class CallFilterModule : Module() {
       if (!rm.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) return@Function false
       val activity = appContext.currentActivity ?: return@Function false
       activity.startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING), 4711)
+      true
+    }
+
+    // Pide a Android agregar un atajo a los Ajustes rápidos (Android 13+). false si no se puede.
+    Function("addTile") { kind: String ->
+      if (Build.VERSION.SDK_INT < 33) return@Function false
+      val sbm = context.getSystemService(StatusBarManager::class.java) ?: return@Function false
+      val (cls, label, icon) = if (kind == "quiet")
+        Triple(QuietTileService::class.java, "No molestar", R.drawable.ic_tile_quiet)
+      else Triple(FilterTileService::class.java, "Filtro", R.drawable.ic_tile_filter)
+      sbm.requestAddTileService(ComponentName(context, cls), label, Icon.createWithResource(context, icon), context.mainExecutor) { }
       true
     }
 

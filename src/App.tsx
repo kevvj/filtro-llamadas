@@ -51,6 +51,7 @@ export default function App() {
   // Lee SIMs, rol y bloqueos; crea reglas para SIMs nuevas con su país detectado.
   const refresh = useCallback(() => {
     const list = CallFilter?.getSims() ?? []
+    setCfg(loadConfig(deviceIso)) // pudo cambiar desde los atajos de Ajustes rápidos
     setSims(list)
     setHasRole(CallFilter ? CallFilter.hasScreeningRole() : false)
     setLog(loadLog())
