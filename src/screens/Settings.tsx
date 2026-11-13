@@ -135,10 +135,10 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
         </Sub>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <View style={{ flex: 1 }}>
-            <Button kind="glass" label="Agregar Filtro" onPress={() => { if (!CallFilter?.addTile("filter")) setTileMsg(true) }} />
+            <Button kind="glass" label="+ Filtro" onPress={() => { if (!CallFilter?.addTile("filter")) setTileMsg(true) }} />
           </View>
           <View style={{ flex: 1 }}>
-            <Button kind="glass" label="Agregar No molestar" onPress={() => { if (!CallFilter?.addTile("quiet")) setTileMsg(true) }} />
+            <Button kind="glass" label="+ No molestar" onPress={() => { if (!CallFilter?.addTile("quiet")) setTileMsg(true) }} />
           </View>
         </View>
         {tileMsg ? <Sub style={{ marginTop: 10 }}>Desliza el panel de notificaciones, toca el lápiz (editar) y arrastra los atajos de Filtro de llamadas.</Sub> : null}
@@ -198,8 +198,9 @@ function SimAds() {
         </View>
       ))}
       <Sub style={{ marginTop: 12, color: c.mute }}>
-        Si Desactivar sale en gris, este celular no lo deja desde ahí. Al desactivarlo solo dejas de ver el menú de la SIM;
-        llamadas, SMS y datos siguen igual.
+        Si Desactivar sale en gris (pasa en Samsung), el celular no lo deja desde ahí: se hace desde una PC con el
+        cable USB y depuración activada, con adb shell pm disable-user --user 0 com.android.stk (y com.android.stk2 para la
+        SIM 2). Al desactivarlo solo dejas de ver el menú de la SIM; llamadas, SMS y datos siguen igual.
       </Sub>
     </Card>
   )
