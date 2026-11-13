@@ -1,20 +1,11 @@
 # Pendientes – Filtro de llamadas
 
-Estado al 2026-11-13: todo está subido a `main` y el último CI pasó (release con estadísticas publicado).
-
-## Urgente
-0. **El bloqueo no funcionó en un celular real con 2 SIMs** (regla "Contactos", todos los permisos): entró spam.
-   Sospechas: (a) no se activó el rol de filtro ("Activar filtro"); (b) `simIdOf` en `FilterScreeningService.kt` no reconoce
-   la SIM y devuelve "default" → usa `defaultRule` ("all") y deja pasar todo. Revisar si dice "Protección activa" y si
-   el Historial muestra esas llamadas como "entró".
-   Recomendado: depurar con el celular por USB con `adb` (Depuración USB activada): `adb logcat`, `adb shell dumpsys role`,
-   capturas con `adb exec-out screencap -p`.
+Estado al 2026-11-13: versión 1.1.3 con OTA. Probado en el celular real (Samsung A22, 2 SIMs): bloqueo por SIM,
+insistencia, "Es spam", Historial de 5 en 5, estadísticas, actualizador de APK y OTA.
 
 ## Por probar
-1. **Estadísticas** (`src/screens/Stats.tsx`, al final del Historial): revisarlas en la vista web
-   (`npx expo start --web --port 8081 --clear` → http://localhost:8081/telefono.html).
-2. **Historial con desconocidos que entraron** (botón "Es spam"): probarlo en un celular real.
-3. **Celular real con 2 SIMs**: probar la regla por línea (el emulador solo tiene una SIM).
+1. **No molestar** con una llamada real dentro del horario.
+2. **País y número oculto** con una llamada real (opcional: ya lo cubren las pruebas).
 
 ## Por hacer
 4. **Llamadas recientes en Listas**: sección con las últimas llamadas (CallLog, permiso `READ_CALL_LOG`)
