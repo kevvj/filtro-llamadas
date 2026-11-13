@@ -2,6 +2,14 @@
 
 Estado al 2026-11-13: todo está subido a `main` y el último CI pasó (release con estadísticas publicado).
 
+## Urgente
+0. **El bloqueo no funcionó en un celular real con 2 SIMs** (regla "Contactos", todos los permisos): entró spam.
+   Sospechas: (a) no se activó el rol de filtro ("Activar filtro"); (b) `simIdOf` en `FilterScreeningService.kt` no reconoce
+   la SIM y devuelve "default" → usa `defaultRule` ("all") y deja pasar todo. Revisar si dice "Protección activa" y si
+   el Historial muestra esas llamadas como "entró".
+   Recomendado: depurar con el celular por USB con `adb` (Depuración USB activada): `adb logcat`, `adb shell dumpsys role`,
+   capturas con `adb exec-out screencap -p`.
+
 ## Por probar
 1. **Estadísticas** (`src/screens/Stats.tsx`, al final del Historial): revisarlas en la vista web
    (`npx expo start --web --port 8081 --clear` → http://localhost:8081/telefono.html).
@@ -23,6 +31,6 @@ Estado al 2026-11-13: todo está subido a `main` y el último CI pasó (release 
 
 ## Reglas al trabajar
 - Si cambia `FilterEngine.kt`, cambiar también `modules/call-filter/engine.ts` y su prueba.
-- Antes de subir: `npm run check`. Cada push a `main` publica una versión nueva: juntar cambios y subir una vez.
+- Antes de subir: `npm run check`. Para publicar APK: `npm run nueva-version` y subir; sin cambio de versión no se compila APK.
 - No usar Expo/EAS para versiones: solo GitHub Releases.
 - No hacer lista de spam compartida (no hay base de datos).

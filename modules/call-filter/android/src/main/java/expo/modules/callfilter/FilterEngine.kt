@@ -110,6 +110,7 @@ object FilterEngine {
     val sims = cfg.optJSONObject("sims")
     val rule = sims?.optJSONObject(simId) ?: cfg.optJSONObject("defaultRule") ?: JSONObject()
     val mode = rule.optString("mode", "all")
+    android.util.Log.i("FiltroLlamadas", "sim=$simId reglas=${sims?.keys()?.asSequence()?.toList()} usa=${if (sims?.has(simId) == true) simId else "defaultRule"} modo=$mode")
 
     if (number.isEmpty() || digits(number).isEmpty()) {
       if (cfg.optBoolean("blockPrivate")) return Decision(true, "private")

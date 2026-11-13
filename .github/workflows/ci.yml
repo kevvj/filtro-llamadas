@@ -55,16 +55,40 @@ jobs:
         with:
           fail-on-severity: high
 
-  apk:
-    name: Compilar y publicar APK
+  version:
+    name: ¿Versión nueva?
     needs: [codigo, seguridad]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      nueva: ${{ steps.check.outputs.nueva }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      # La APK solo se compila si la versión de app.json todavía no tiene release (npm run nueva-version)
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "nueva=false" >> "$GITHUB_OUTPUT"
+            echo "La versión $VERSION ya está publicada: no se compila APK."
+          else
+            echo "nueva=true" >> "$GITHUB_OUTPUT"
+            echo "Versión nueva: $VERSION"
+          fi
+
+  apk:
+    name: Compilar y publicar APK
+    needs: version
+    if: needs.version.outputs.nueva == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
-      # versionCode de la APK: sube en cada ejecución (lo usa app.config.js y lo compara el actualizador)
-      BUILD_NUMBER: ${{ github.run_number }}
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -91,16 +115,18 @@ jobs:
             const info = {
               versionCode: code,
               version: expo.version,
-              url: "https://github.com/" + process.env.GITHUB_REPOSITORY + "/releases/download/latest/filtro-llamadas.apk?v=" + code,
+              url: "https://github.com/" + process.env.GITHUB_REPOSITORY + "/releases/download/v" + expo.version + "/filtro-llamadas.apk",
             }
             require("fs").writeFileSync("version.json", JSON.stringify(info, null, 2))
             console.log(info)
           '
+      # Solo queda la release de la versión nueva: las anteriores (y sus tags) se borran.
       - name: Publicar en Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(node -p "require('./version.json').version")
           NOTES="Versión $VERSION (commit ${GITHUB_SHA::7}). Requiere Android 10 o superior. La app se actualiza sola."
-          gh release delete latest --yes --cleanup-tag || true
-          gh release create latest filtro-llamadas.apk version.json --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest
+          gh release create "v$VERSION" filtro-llamadas.apk version.json --title "Filtro de llamadas $VERSION" --notes "$NOTES" --latest
+          for tag in $(gh release list --limit 100 --json tagName -q '.[].tagName'); do
+            [ "$tag" = "v$VERSION" ] || gh release delete "$tag" --yes --cleanup-tag
+          done

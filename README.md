@@ -154,8 +154,17 @@ Nada llega a la APK sin pasar estas revisiones (`.github/workflows/ci.yml`), en 
 | **Dependency review** | En pull requests, dependencias nuevas con fallos graves. |
 | **npm ci** | Un `package-lock.json` que no coincida con `package.json`. |
 
-Solo si todo pasa, el mismo workflow compila la APK y la publica, junto a `version.json` (lo que lee el actualizador), en el release
-[`latest`](https://github.com/kevvj/filtro-llamadas/releases/latest). Además, el hook `.githooks/pre-push` corre
+### Publicar una versión
+No cada push genera una APK: solo cuando cambia la versión de `app.json`.
+
+```bash
+npm run nueva-version              # 1.1.0 → 1.1.1 (o: minor, major, 1.4.0)
+git commit -am "Versión 1.1.1" && git push
+```
+
+Si todo pasa y esa versión no tiene release, el workflow compila la APK y la publica con `version.json` (lo que lee
+el actualizador) en el release `vX.Y.Z`, y borra los anteriores: siempre queda solo el último. El `versionCode` sale de la
+versión (1.2.3 → 10203). Además, el hook `.githooks/pre-push` corre
 `npm run check` en tu PC y cancela el push si algo falla.
 
 Para probar el bloqueo en un emulador: `adb emu gsm call +573001234567`.

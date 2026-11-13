@@ -2,13 +2,12 @@
   "expo": {
     "name": "Filtro de llamadas",
     "slug": "filtro-llamadas",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#161B26",
     "android": {
       "package": "com.kevin.filtrollamadas",
-      "versionCode": 1,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.READ_PHONE_STATE",

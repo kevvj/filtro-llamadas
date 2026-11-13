@@ -7,12 +7,16 @@ import android.telecom.CallScreeningService
 import android.telecom.PhoneAccountHandle
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.util.Log
 
 // Android llama a este servicio en cada llamada entrante (si la app tiene el rol de "filtro de llamadas").
 class FilterScreeningService : CallScreeningService() {
 
   override fun onScreenCall(details: Call.Details) {
-    if (Build.VERSION.SDK_INT >= 29 && details.callDirection != Call.Details.DIRECTION_INCOMING) {
+    val direction = if (Build.VERSION.SDK_INT >= 29) details.callDirection else -99
+    // Solo se ignoran las salientes: algunos Samsung marcan las entrantes como UNKNOWN
+    if (Build.VERSION.SDK_INT >= 29 && direction == Call.Details.DIRECTION_OUTGOING) {
+      Log.i(TAG, "saliente: no se filtra")
       respondToCall(details, CallResponse.Builder().build())
       return
     }
@@ -21,14 +25,17 @@ class FilterScreeningService : CallScreeningService() {
     val decision = try {
       FilterEngine.decide(this, number, simId)
     } catch (e: Exception) {
-      FilterEngine.Decision(false, "error")
+      Log.e(TAG, "error al decidir", e)
+      FilterEngine.Decision(false, "error: ${e.javaClass.simpleName}")
     }
+    Log.i(TAG, "dir=$direction handle=${details.accountHandle?.id} sim=$simId num=${number?.takeLast(4)} -> blocked=${decision.blocked} reason=${decision.reason}")
 
     val response = CallResponse.Builder()
     if (decision.blocked) {
       response.setDisallowCall(true).setRejectCall(true).setSkipCallLog(false).setSkipNotification(true)
       FilterEngine.addLog(this, number ?: "", simId, decision.reason)
-    } else if (decision.reason == "repeat") {
+    } else if (decision.reason !in setOf("ok", "allowlist", "filtro apagado")) {
+      // repeat, error, sin configurar...: queda en el historial para ver por qué entró
       FilterEngine.addLog(this, number ?: "", simId, decision.reason, allowed = true)
     } else if (decision.reason == "ok" && !number.isNullOrBlank() && !FilterEngine.isContact(this, number)) {
       // desconocido que entró: queda en el historial para poder marcarlo como spam
@@ -38,6 +45,8 @@ class FilterScreeningService : CallScreeningService() {
   }
 
   companion object {
+    const val TAG = "FiltroLlamadas"
+
     // Id de la SIM (subscriptionId) por la que entra la llamada; "default" si no se puede saber.
     fun simIdOf(ctx: Context, handle: PhoneAccountHandle?): String {
       if (handle == null) return "default"

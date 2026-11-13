@@ -1,7 +1,7 @@
 import { File, Paths } from "expo-file-system"
 import ApkUpdater, { InstallStatus } from "../modules/apk-updater"
 
-// Lo publica el workflow CI junto a la APK, en el release "latest".
+// Lo publica el workflow CI junto a la APK, en el release de la última versión (vX.Y.Z).
 const INFO_URL = "https://github.com/kevvj/filtro-llamadas/releases/latest/download/version.json"
 
 export type ApkRelease = { versionCode: number; version: string; url: string; notes?: string }
