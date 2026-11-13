@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { installedVersion } from "../update"
+import { installedVersion, otaId } from "../update"
 import { exportBackup, pickBackup } from "../backup"
 import { confirm } from "./Lists"
 import CallFilter, { Sim } from "../../modules/call-filter"
@@ -167,7 +167,7 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
       </Card>
 
       <Sub style={{ textAlign: "center", color: c.mute, marginTop: 4 }}>
-        {installedVersion() ? `Versión ${installedVersion()} · se actualiza sola` : "Vista previa"}
+        {installedVersion() ? `Versión ${installedVersion()}${otaId() ? ` · OTA ${otaId()}` : ""} · se actualiza sola` : "Vista previa"}
       </Sub>
     </View>
   )

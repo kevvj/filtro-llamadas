@@ -25,7 +25,9 @@ const files = walk("modules")
   .map((f) => f.split(path.sep).join("/"))
   .filter((f) => f.includes("/android/") || f.endsWith("expo-module.config.json"))
   .sort()
-for (const f of files) parts.push([f, fs.readFileSync(f, "utf8")])
+// los parches de node_modules (patch-package) también cambian código nativo
+const patches = walk("patches").map((f) => f.split(path.sep).join("/")).sort()
+for (const f of [...files, ...patches]) parts.push([f, fs.readFileSync(f, "utf8")])
 
 const h = crypto.createHash("sha256")
 // sin \r para que dé igual en Windows y en Linux

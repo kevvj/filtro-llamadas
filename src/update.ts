@@ -1,4 +1,5 @@
 import { File, Paths } from "expo-file-system"
+import * as Updates from "expo-updates"
 import ApkUpdater, { InstallStatus } from "../modules/apk-updater"
 
 // Lo publica el workflow CI junto a la APK, en el release de la última versión (vX.Y.Z).
@@ -8,6 +9,8 @@ export type ApkRelease = { versionCode: number; version: string; url: string; no
 
 export const updaterAvailable = () => !!ApkUpdater
 export const installedVersion = () => ApkUpdater?.versionName() ?? ""
+// Actualización OTA en uso (primeros caracteres del id); vacío si corre el JS que trae la APK
+export const otaId = () => (Updates.isEnabled && !Updates.isEmbeddedLaunch && Updates.updateId ? Updates.updateId.slice(0, 8) : "")
 
 // La versión nueva si hay una más reciente que la instalada; null si no (o sin internet, o en web).
 export async function checkUpdate(): Promise<ApkRelease | null> {
