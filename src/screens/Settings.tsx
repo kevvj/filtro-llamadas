@@ -58,6 +58,27 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
             <TimeStepper label="Hasta" value={cfg.quiet.to} onChange={(v) => update((x) => ({ ...x, quiet: { ...x.quiet, to: v } }))} />
           </View>
         )}
+        <Divider />
+        <ToggleRow
+          label="Dejar pasar si insisten"
+          hint={`Si un desconocido llama ${cfg.repeat.calls} veces en ${cfg.repeat.minutes} min, puede ser urgente y entra`}
+          value={cfg.repeat.enabled}
+          onChange={(v) => update((x) => ({ ...x, repeat: { ...x.repeat, enabled: v } }))}
+        />
+        {cfg.repeat.enabled && (
+          <View style={{ gap: 8, marginTop: 10 }}>
+            <Segmented
+              value={String(cfg.repeat.calls)}
+              onChange={(v) => update((x) => ({ ...x, repeat: { ...x.repeat, calls: Number(v) } }))}
+              options={[{ value: "2", label: "2 llamadas" }, { value: "3", label: "3 llamadas" }]}
+            />
+            <Segmented
+              value={String(cfg.repeat.minutes)}
+              onChange={(v) => update((x) => ({ ...x, repeat: { ...x.repeat, minutes: Number(v) } }))}
+              options={[{ value: "3", label: "3 min" }, { value: "5", label: "5 min" }, { value: "10", label: "10 min" }]}
+            />
+          </View>
+        )}
       </Card>
 
       <Card>

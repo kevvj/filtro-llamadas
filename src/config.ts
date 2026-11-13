@@ -17,6 +17,7 @@ export type Config = {
   enabled: boolean
   blockPrivate: boolean
   quiet: { enabled: boolean; from: number; to: number } // minutos desde 00:00
+  repeat: { enabled: boolean; calls: number; minutes: number } // insistencia
   spam: Entry[]
   allow: Entry[]
   prefixes: string[]
@@ -24,7 +25,7 @@ export type Config = {
   defaultRule: Rule
 }
 
-export type LogItem = { number: string; sim: string; reason: string; time: number }
+export type LogItem = { number: string; sim: string; reason: string; time: number; allowed?: boolean }
 
 export const REASONS: Record<string, string> = {
   spam: "Marcado como spam",
@@ -34,6 +35,7 @@ export const REASONS: Record<string, string> = {
   prefix: "Prefijo bloqueado",
   private: "Número oculto",
   quiet: "No molestar",
+  repeat: "Entró por insistencia",
   ok: "Se permitiría",
   allowlist: "En lista de permitidos",
   "filtro apagado": "El filtro está apagado",
@@ -58,6 +60,7 @@ export function defaultConfig(deviceIso: string): Config {
     enabled: true,
     blockPrivate: false,
     quiet: { enabled: false, from: 22 * 60, to: 7 * 60 },
+    repeat: { enabled: true, calls: 2, minutes: 3 },
     spam: [],
     allow: [],
     prefixes: [],

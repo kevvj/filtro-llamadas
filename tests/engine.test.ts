@@ -117,3 +117,24 @@ test("configuración incompleta no rompe", () => {
   assert.equal(run({}, "+573209998877").blocked, false)
   assert.equal(run({ enabled: true, spam: ["+573209998877"] }, "+573209998877").reason, "spam")
 })
+
+test("insistencia: un desconocido que vuelve a llamar pronto entra", () => {
+  const cfg = config({ sims: { "1": rule({ mode: "contacts" }) }, repeat: { enabled: true, calls: 2, minutes: 3 } })
+  const n = "+573209998877"
+  assert.equal(decide(cfg, n, "1", isContact, NOON, () => 0).reason, "unknown", "primera llamada")
+  assert.deepEqual(decide(cfg, n, "1", isContact, NOON, () => 1), { blocked: false, reason: "repeat" })
+  const off = { ...cfg, repeat: { enabled: false, calls: 2, minutes: 3 } }
+  assert.equal(decide(off, n, "1", isContact, NOON, () => 5).reason, "unknown", "desactivada")
+  const three = { ...cfg, repeat: { enabled: true, calls: 3, minutes: 5 } }
+  assert.equal(decide(three, n, "1", isContact, NOON, () => 1).blocked, true, "pide 3 llamadas")
+  assert.equal(decide(three, n, "1", isContact, NOON, () => 2).blocked, false)
+})
+
+test("insistencia nunca salta spam, país, prefijo ni línea en Ninguna", () => {
+  const rep = { enabled: true, calls: 2, minutes: 3 }
+  const many = () => 9
+  assert.equal(decide(config({ repeat: rep, spam: ["+573209998877"] }), "+573209998877", "1", isContact, NOON, many).reason, "spam")
+  assert.equal(decide(config({ repeat: rep, sims: { "1": rule({ mode: "none" }) } }), "+573209998877", "1", isContact, NOON, many).reason, "line_off")
+  assert.equal(decide(config({ repeat: rep, sims: { "1": rule({ countryOnly: true }) } }), "+525512345678", "1", isContact, NOON, many).reason, "country")
+  assert.equal(decide(config({ repeat: rep, prefixes: ["+57601"] }), "+576015550000", "1", isContact, NOON, many).reason, "prefix")
+})

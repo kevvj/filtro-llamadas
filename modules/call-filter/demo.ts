@@ -30,7 +30,9 @@ function test(raw: string, simId: string) {
   let cfg = null
   try { cfg = JSON.parse(store.get("config", "") || "null") } catch {}
   const d = new Date()
-  return decide(cfg, raw, simId, (n) => CONTACTS.some((k) => sameNumber(k, n)), d.getHours() * 60 + d.getMinutes())
+  const log: { number: string; time: number; allowed?: boolean }[] = JSON.parse(store.get("log", SAMPLE_LOG))
+  const recent = (n: string, min: number) => log.filter((l) => !l.allowed && l.time >= Date.now() - min * 60e3 && sameNumber(l.number, n)).length
+  return decide(cfg, raw, simId, (n) => CONTACTS.some((k) => sameNumber(k, n)), d.getHours() * 60 + d.getMinutes(), recent)
 }
 
 export const demoModule = {

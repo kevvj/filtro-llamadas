@@ -73,7 +73,7 @@ export default function App() {
 
   if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: c.bg }} />
 
-  const blockedToday = log.filter((l) => new Date(l.time).toDateString() === new Date().toDateString()).length
+  const blockedToday = log.filter((l) => !l.allowed && new Date(l.time).toDateString() === new Date().toDateString()).length
   const active = cfg.enabled && hasRole
 
   return (

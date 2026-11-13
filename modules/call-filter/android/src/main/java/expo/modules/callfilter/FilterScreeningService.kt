@@ -28,6 +28,8 @@ class FilterScreeningService : CallScreeningService() {
     if (decision.blocked) {
       response.setDisallowCall(true).setRejectCall(true).setSkipCallLog(false).setSkipNotification(true)
       FilterEngine.addLog(this, number ?: "", simId, decision.reason)
+    } else if (decision.reason == "repeat") {
+      FilterEngine.addLog(this, number ?: "", simId, decision.reason, allowed = true)
     }
     respondToCall(details, response.build())
   }

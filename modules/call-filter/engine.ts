@@ -30,7 +30,15 @@ export function inQuietHours(quiet: { enabled?: boolean; from?: number; to?: num
 }
 
 // cfg: la configuración guardada (JSON). isContact: si el número está en los contactos.
-export function decide(cfg: any, raw: string | null | undefined, simId: string, isContact: (n: string) => boolean, nowMinutes: number): Decision {
+// countRecent(n, min): veces que n fue bloqueado en los últimos min minutos (insistencia).
+export function decide(
+  cfg: any,
+  raw: string | null | undefined,
+  simId: string,
+  isContact: (n: string) => boolean,
+  nowMinutes: number,
+  countRecent: (n: string, minutes: number) => number = () => 0
+): Decision {
   if (!cfg) return { blocked: false, reason: "sin configurar" }
   if (cfg.enabled === false) return { blocked: false, reason: "filtro apagado" }
   const rule = cfg.sims?.[simId] ?? cfg.defaultRule ?? {}
@@ -54,6 +62,10 @@ export function decide(cfg: any, raw: string | null | undefined, simId: string, 
     if (!ok) return { blocked: true, reason: "country" }
   }
   const needContact = mode === "contacts" || inQuietHours(cfg.quiet, nowMinutes)
-  if (needContact && !isContact(n)) return { blocked: true, reason: mode === "contacts" ? "unknown" : "quiet" }
+  if (needContact && !isContact(n)) {
+    const rep = cfg.repeat
+    if (rep?.enabled && countRecent(n, rep.minutes ?? 3) >= (rep.calls ?? 2) - 1) return { blocked: false, reason: "repeat" }
+    return { blocked: true, reason: mode === "contacts" ? "unknown" : "quiet" }
+  }
   return { blocked: false, reason: "ok" }
 }

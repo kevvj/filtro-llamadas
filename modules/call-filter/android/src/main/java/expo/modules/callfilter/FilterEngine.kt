@@ -25,13 +25,14 @@ object FilterEngine {
   fun clearLog(ctx: Context) = prefs(ctx).edit().putString(KEY_LOG, "[]").apply()
 
   @Synchronized
-  fun addLog(ctx: Context, number: String, simId: String, reason: String) {
+  fun addLog(ctx: Context, number: String, simId: String, reason: String, allowed: Boolean = false) {
     val old = try { JSONArray(getLog(ctx)) } catch (e: Exception) { JSONArray() }
     val out = JSONArray()
     out.put(JSONObject().apply {
       put("number", number)
       put("sim", simId)
       put("reason", reason)
+      if (allowed) put("allowed", true)
       put("time", System.currentTimeMillis())
     })
     for (i in 0 until minOf(old.length(), MAX_LOG - 1)) out.put(old.get(i))
@@ -86,6 +87,19 @@ object FilterEngine {
     return if (from <= to) now in from until to else now >= from || now < to
   }
 
+  // Veces que este número fue bloqueado en los últimos "minutes" minutos (según el historial).
+  fun recentBlocks(ctx: Context, number: String, minutes: Int): Int {
+    val log = try { JSONArray(getLog(ctx)) } catch (e: Exception) { return 0 }
+    val since = System.currentTimeMillis() - minutes * 60_000L
+    var n = 0
+    for (i in 0 until log.length()) {
+      val o = log.optJSONObject(i) ?: continue
+      if (o.optLong("time") < since) break
+      if (!o.optBoolean("allowed") && sameNumber(o.optString("number"), number)) n++
+    }
+    return n
+  }
+
   fun decide(ctx: Context, rawNumber: String?, simId: String): Decision {
     val cfgText = getConfig(ctx)
     if (cfgText.isBlank()) return Decision(false, "sin configurar")
@@ -124,6 +138,12 @@ object FilterEngine {
 
     val needContact = mode == "contacts" || inQuietHours(cfg.optJSONObject("quiet"))
     if (needContact && !isContact(ctx, number)) {
+      // insistencia: si ya llamó varias veces en pocos minutos, puede ser urgente y se deja pasar
+      val rep = cfg.optJSONObject("repeat")
+      if (rep != null && rep.optBoolean("enabled") &&
+        recentBlocks(ctx, number, rep.optInt("minutes", 3)) >= rep.optInt("calls", 2) - 1) {
+        return Decision(false, "repeat")
+      }
       return Decision(true, if (mode == "contacts") "unknown" else "quiet")
     }
     return Decision(false, "ok")
