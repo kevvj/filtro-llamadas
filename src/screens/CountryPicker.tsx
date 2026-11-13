@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { COUNTRIES, flag } from "../countries"
 import { c, f } from "../theme"
 import { Button, Input, Sub } from "../ui"
@@ -11,7 +12,7 @@ type Props = { visible: boolean; selected: string[]; onClose: () => void; onSave
 // El contenido se monta al abrir, así la selección y la búsqueda arrancan limpias cada vez.
 export default function CountryPicker(p: Props) {
   return (
-    <Modal visible={p.visible} animationType="slide" transparent onRequestClose={p.onClose}>
+    <Modal visible={p.visible} animationType="slide" transparent statusBarTranslucent navigationBarTranslucent onRequestClose={p.onClose}>
       {p.visible ? <PickerBody {...p} /> : null}
     </Modal>
   )
@@ -20,6 +21,8 @@ export default function CountryPicker(p: Props) {
 function PickerBody({ selected, onClose, onSave }: Props) {
   const [sel, setSel] = useState<string[]>(selected)
   const [q, setQ] = useState("")
+  // el modal llega hasta el borde: se deja espacio para la barra de navegación de Android
+  const insets = useSafeAreaInsets()
 
   const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
   const list = COUNTRIES.filter((x) => norm(x.name).includes(norm(q)) || x.code.startsWith(q.replace("+", "")))
@@ -27,7 +30,7 @@ function PickerBody({ selected, onClose, onSave }: Props) {
 
   return (
       <View style={{ flex: 1, backgroundColor: "rgba(10,10,18,0.6)", justifyContent: "flex-end" }}>
-        <View style={{ backgroundColor: c.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, height: "85%" }}>
+        <View style={{ backgroundColor: c.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 20 + insets.bottom, height: "85%" }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: c.text, fontSize: 22, fontFamily: f.regular }}>Países permitidos</Text>

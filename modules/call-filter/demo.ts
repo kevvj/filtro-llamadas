@@ -37,6 +37,8 @@ function test(raw: string, simId: string) {
 
 export const demoModule = {
   hasScreeningRole: () => true,
+  simToolkits: () => [{ pkg: "com.android.stk", sim: 1, enabled: true }, { pkg: "com.android.stk2", sim: 2, enabled: false }],
+  openPackageSettings: () => {},
   requestScreeningRole: () => true,
   openAppSettings: () => {},
   addTile: () => false,

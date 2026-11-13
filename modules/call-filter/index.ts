@@ -11,6 +11,8 @@ export type Sim = {
   number: string
 }
 
+export type SimToolkit = { pkg: string; sim: number; enabled: boolean }
+
 declare class CallFilterModule extends NativeModule {
   hasScreeningRole(): boolean
   requestScreeningRole(): boolean
@@ -23,6 +25,8 @@ declare class CallFilterModule extends NativeModule {
   getLog(): string
   clearLog(): void
   test(number: string, simId: string): { blocked: boolean; reason: string }
+  simToolkits(): SimToolkit[]
+  openPackageSettings(pkg: string): void
 }
 
 // En web se usa un demo (vista previa); en Expo Go o iOS queda null: ahí no hay filtro nativo

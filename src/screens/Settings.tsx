@@ -126,6 +126,8 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
         )}
       </Card>
 
+      <SimAds />
+
       <Card>
         <Text style={{ color: c.text, fontSize: 15, fontFamily: f.regular }}>Atajos rápidos</Text>
         <Sub style={{ marginTop: 4, marginBottom: 14 }}>
@@ -168,5 +170,37 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
         {installedVersion() ? `Versión ${installedVersion()} · se actualiza sola` : "Vista previa"}
       </Sub>
     </View>
+  )
+}
+
+// Publicidad emergente de la SIM ("SmartApp", "Claro te informa"...): la muestra el SIM Toolkit, no es una llamada.
+// Ninguna app puede bloquearla; se guía al usuario a desactivar el SIM Toolkit desde Ajustes del sistema.
+function SimAds() {
+  const kits = CallFilter?.simToolkits?.() ?? []
+  if (!kits.length) return null
+  return (
+    <Card>
+      <Text style={{ color: c.text, fontSize: 15, fontFamily: f.regular }}>Publicidad de la SIM</Text>
+      <Sub style={{ marginTop: 4, marginBottom: 14 }}>
+        Los avisos emergentes de publicidad los manda la SIM de la operadora, no son llamadas, y ninguna app puede
+        bloquearlos. Se quitan desactivando el SIM Toolkit: toca Abrir y luego Desactivar.
+      </Sub>
+      {kits.map((k, i) => (
+        <View key={k.pkg}>
+          {i > 0 && <Divider />}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: c.text, fontSize: 15, fontFamily: f.regular }}>SIM {k.sim}</Text>
+              <Sub style={{ color: k.enabled ? c.danger : c.peri }}>{k.enabled ? "Puede mostrar publicidad" : "Desactivado: sin publicidad"}</Sub>
+            </View>
+            <Button small kind="glass" label="Abrir" onPress={() => CallFilter?.openPackageSettings(k.pkg)} />
+          </View>
+        </View>
+      ))}
+      <Sub style={{ marginTop: 12, color: c.mute }}>
+        Si Desactivar sale en gris, este celular no lo deja desde ahí. Al desactivarlo solo dejas de ver el menú de la SIM;
+        llamadas, SMS y datos siguen igual.
+      </Sub>
+    </Card>
   )
 }

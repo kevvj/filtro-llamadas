@@ -4,6 +4,12 @@
   <uses-permission android:name="android.permission.READ_CONTACTS" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+  <!-- para ver si el SIM Toolkit (publicidad de la SIM) está activo -->
+  <queries>
+    <package android:name="com.android.stk" />
+    <package android:name="com.android.stk2" />
+  </queries>
+
   <application>
     <service
       android:name="expo.modules.callfilter.FilterScreeningService"

@@ -93,6 +93,23 @@ class CallFilterModule : Module() {
       out
     }
 
+    // SIM Toolkit de cada SIM: muestra la publicidad emergente de la operadora (no son llamadas)
+    Function("simToolkits") {
+      listOf("com.android.stk" to 1, "com.android.stk2" to 2).mapNotNull { (pkg, sim) ->
+        try {
+          val info = context.packageManager.getApplicationInfo(pkg, 0)
+          mapOf("pkg" to pkg, "sim" to sim, "enabled" to info.enabled)
+        } catch (e: Exception) { null }
+      }
+    }
+
+    // Abre la pantalla del sistema de esa app (para desactivarla)
+    Function("openPackageSettings") { pkg: String ->
+      val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg))
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      context.startActivity(intent)
+    }
+
     Function("getConfig") { FilterEngine.getConfig(context) }
     Function("setConfig") { json: String -> FilterEngine.setConfig(context, json) }
     Function("getLog") { FilterEngine.getLog(context) }
