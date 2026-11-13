@@ -20,6 +20,7 @@ export default function ListsScreen({ cfg, update }: Props) {
   const [kind, setKind] = useState<Kind>("spam")
   const [num, setNum] = useState("")
   const [note, setNote] = useState("")
+  const [showNote, setShowNote] = useState(false)
 
   const add = () => {
     const n = num.trim()
@@ -37,6 +38,7 @@ export default function ListsScreen({ cfg, update }: Props) {
     }
     setNum("")
     setNote("")
+    setShowNote(false)
   }
 
   const remove = (e: Entry) =>
@@ -70,7 +72,12 @@ export default function ListsScreen({ cfg, update }: Props) {
           value={num}
           onChangeText={setNum}
         />
-        {kind !== "prefix" && <Input placeholder="Nota (opcional)" value={note} onChangeText={setNote} style={{ marginTop: 8 }} />}
+        {kind !== "prefix" && showNote && <Input placeholder="Nota (opcional)" value={note} onChangeText={setNote} style={{ marginTop: 8 }} />}
+        {kind !== "prefix" && !showNote && (
+          <Text onPress={() => setShowNote(true)} style={{ color: c.mute, fontSize: 13, fontFamily: f.medium, marginTop: 10 }}>
+            + Agregar nota
+          </Text>
+        )}
         <View style={{ marginTop: 14 }}>
           <Button label={kind === "spam" ? "Marcar como spam" : kind === "allow" ? "Permitir siempre" : "Bloquear prefijo"} onPress={add} />
         </View>
