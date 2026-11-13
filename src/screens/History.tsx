@@ -16,7 +16,7 @@ const when = (t: number) => {
   return today ? h : `${d.toLocaleDateString([], { day: "numeric", month: "short" })}, ${h}`
 }
 
-const PAGE = 10
+const PAGE = 5
 
 // Llamadas bloqueadas por el filtro, con acciones rápidas.
 export default function HistoryScreen({ cfg, sims, log, update, onClear }: Props) {
