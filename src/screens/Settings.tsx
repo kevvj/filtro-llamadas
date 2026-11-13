@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { installedVersion } from "../update"
+import { exportBackup, pickBackup } from "../backup"
+import { confirm } from "./Lists"
 import CallFilter, { Sim } from "../../modules/call-filter"
 import { Config, REASONS, hhmm } from "../config"
 import { c, f } from "../theme"
@@ -33,6 +35,28 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
   const [picked, setSim] = useState("")
   const sim = sims.some((s) => s.id === picked) ? picked : (sims[0]?.id ?? "default")
   const [result, setResult] = useState<{ blocked: boolean; reason: string } | null>(null)
+  const [backupMsg, setBackupMsg] = useState("")
+
+  const saveBackup = async () => {
+    try {
+      setBackupMsg((await exportBackup(cfg)) ? "" : "Guardar copia no está disponible aquí.")
+    } catch (e) {
+      setBackupMsg(String((e as Error)?.message ?? e))
+    }
+  }
+
+  const restoreBackup = async () => {
+    try {
+      const data = await pickBackup()
+      if (!data) return
+      confirm("Restaurar copia", "Se reemplaza la configuración actual (líneas, spam, permitidos y ajustes).", "Restaurar", () => {
+        update((x) => ({ ...x, ...data }))
+        setBackupMsg("Copia restaurada.")
+      })
+    } catch (e) {
+      setBackupMsg(String((e as Error)?.message ?? e))
+    }
+  }
 
   const test = () => {
     if (!num.trim()) return
@@ -99,6 +123,22 @@ export default function SettingsScreen({ cfg, sims, update }: Props) {
             <Sub style={{ marginTop: 2 }}>{REASONS[result.reason] ?? result.reason}</Sub>
           </View>
         )}
+      </Card>
+
+      <Card>
+        <Text style={{ color: c.text, fontSize: 15, fontFamily: f.regular }}>Copia de seguridad</Text>
+        <Sub style={{ marginTop: 4, marginBottom: 14 }}>
+          Android la guarda sola en tu cuenta de Google y la recupera si reinstalas la app o cambias de celular. También puedes guardar un archivo en Drive.
+        </Sub>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Button kind="glass" label="Guardar copia" onPress={saveBackup} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button kind="glass" label="Restaurar" onPress={restoreBackup} />
+          </View>
+        </View>
+        {backupMsg ? <Sub style={{ marginTop: 10 }}>{backupMsg}</Sub> : null}
       </Card>
 
       <Card>
