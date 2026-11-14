@@ -126,6 +126,7 @@ const TYPES: Record<number, string> = { 1: "Entró", 2: "Saliente", 3: "Perdida"
 // Últimas llamadas del teléfono, para marcar un número con un toque sin escribirlo.
 function Recent(p: { kind: "spam" | "allow"; cfg: Config; onPick: (r: RecentCall) => void }) {
   const [granted, setGranted] = useState<boolean | null>(Platform.OS === "web" ? true : null)
+  const [shown, setShown] = useState(5)
 
   useEffect(() => {
     if (Platform.OS !== "android") return
@@ -133,7 +134,7 @@ function Recent(p: { kind: "spam" | "allow"; cfg: Config; onPick: (r: RecentCall
   }, [])
   // se vuelve a leer cuando cambia la config (al marcar uno, o al volver a la app)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const calls = useMemo(() => (granted ? CallFilter?.recentCalls(20) ?? [] : []), [granted, p.cfg])
+  const calls = useMemo(() => (granted ? CallFilter?.recentCalls(50) ?? [] : []), [granted, p.cfg])
 
   const ask = async () => {
     const r = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CALL_LOG)
@@ -152,7 +153,8 @@ function Recent(p: { kind: "spam" | "allow"; cfg: Config; onPick: (r: RecentCall
     )
 
   const list = p.kind === "spam" ? p.cfg.spam : p.cfg.allow
-  const rows = calls.filter((r) => r.type !== 2 && !list.some((e) => sameNumber(e.number, r.number))).slice(0, 10)
+  const all = calls.filter((r) => r.type !== 2 && !list.some((e) => sameNumber(e.number, r.number)))
+  const rows = all.slice(0, shown)
   if (!rows.length) return null
   return (
     <Card style={{ paddingVertical: 6 }}>
@@ -171,6 +173,11 @@ function Recent(p: { kind: "spam" | "allow"; cfg: Config; onPick: (r: RecentCall
           </Text>
         </View>
       ))}
+      {all.length > shown && (
+        <View style={{ marginVertical: 10 }}>
+          <Button kind="glass" label={`Ver más (${all.length - shown})`} onPress={() => setShown((n) => n + 5)} />
+        </View>
+      )}
     </Card>
   )
 }
