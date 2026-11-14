@@ -1,11 +1,10 @@
 # Pendientes – Filtro de llamadas
 
 Estado al 2026-11-13: versión 1.2.0 (APK de 19 MB con R8). Probado en el celular real (Samsung A22, 2 SIMs): bloqueo por SIM,
-insistencia, "Es spam", Historial, estadísticas, actualizador, OTA, llamadas recientes, aviso "¿Era spam?" (con su botón) e ícono.
+insistencia, "Es spam", Historial, estadísticas, actualizador, OTA, llamadas recientes, aviso "¿Era spam?" (con su botón), No molestar e ícono.
 
 ## Por probar
-1. **No molestar** con una llamada real dentro del horario.
-2. **País y número oculto** con una llamada real (opcional: ya lo cubren las pruebas).
+1. **País y número oculto** con una llamada real (opcional: ya lo cubren las pruebas).
 
 ## Por hacer
 1. **APK firmada con llave propia** si se va a distribuir (hoy usa la llave debug). Explicárselo al usuario antes.
